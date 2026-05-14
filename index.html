@@ -1,0 +1,3228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recepción de atención — Osana</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lato:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'Lato', sans-serif; background: #F9FAFB; }
+    .font-lato  { font-family: 'Lato', sans-serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #E0E1E9; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #ACAEC4; }
+
+    /* ── Toggle switch ── */
+    .toggle { position: relative; display: inline-block; width: 30px; height: 16px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ACAEC4; transition: .25s; border-radius: 9999px;
+    }
+    .toggle-slider::before {
+      position: absolute; content: "";
+      height: 12px; width: 12px;
+      left: 2px; bottom: 2px;
+      background: white; transition: .25s; border-radius: 50%;
+    }
+    .toggle input:checked + .toggle-slider { background-color: #1A66FC; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(14px); }
+
+    /* ── Conversation items ── */
+    .conv-item { cursor: pointer; transition: background 0.12s; border-left: 3px solid transparent; }
+    .conv-item:hover:not(.is-active) { background: #F4F6FA; }
+    .conv-item.is-active { background: #EEF4FF; border-left-color: #1A66FC; }
+
+    /* ── Header action buttons ── */
+    .hdr-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 10px; border: 2px solid rgba(0,0,0,0.1);
+      border-radius: 10px; cursor: pointer; background: white;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .hdr-btn:hover { border-color: rgba(0,0,0,0.2); background: #F9FAFB; }
+
+    /* ── Status badge colors ── */
+    .status-abierto  { background: #E8F0FF; color: #023BAC; }
+    .status-en-curso { background: #FFF3E0; color: #E65100; }
+    .status-resuelto { background: #E8F5E9; color: #1B5E20; }
+    .status-cerrado  { background: #F3F4F6; color: #6B7280; }
+
+    /* ── Status dropdown ── */
+    .status-dropdown {
+      position: absolute; top: calc(100% + 4px); right: 0;
+      background: white; border: 1px solid #E0E1E9; border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 60;
+      min-width: 140px; display: none;
+    }
+    .status-dropdown.open { display: block; }
+    .status-opt {
+      padding: 9px 14px; cursor: pointer;
+      font-family: 'Lato', sans-serif; font-size: 14px; color: #40435B;
+      transition: background 0.1s;
+    }
+    .status-opt:first-child { border-radius: 8px 8px 0 0; }
+    .status-opt:last-child  { border-radius: 0 0 8px 8px; }
+    .status-opt:hover { background: #F8F9FB; }
+
+    /* ── Chat tab active state ── */
+    .chat-tab-active { background: white; border-radius: 14px; }
+
+    /* ── Patient sidebar tabs ── */
+    .ptab { cursor: pointer; transition: color 0.15s; }
+
+    /* ── Quick action buttons ── */
+    .qa-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 11px; background: #F8F9FB;
+      border: 1px solid #E8E9F0; border-radius: 20px;
+      cursor: pointer; transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+    }
+    .qa-btn:hover { background: white; border-color: #ACAEC4; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    /* ── Input focus ring ── */
+    .msg-input-wrap:focus-within { border-color: #ACAEC4 !important; box-shadow: 0 0 0 3px rgba(26,102,252,0.08); }
+
+    /* ── Message bubbles ── */
+    .msg-sent {
+      background: #E8F0FE; color: #1A3A6B;
+      border-radius: 14px 3px 14px 14px;
+      box-shadow: 0 1px 2px rgba(26,102,252,0.10), 0 0 0 1px rgba(26,102,252,0.07);
+    }
+    .msg-recv {
+      background: #FFFFFF; color: #2D3142;
+      border-radius: 3px 14px 14px 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.07), 0 0 0 1px rgba(64,67,91,0.06);
+    }
+    /* ── Media bubbles (image, file, audio, sticker) ── */
+    .msg-media-sent { border-radius: 14px 3px 14px 14px; overflow:hidden; box-shadow: 0 1px 2px rgba(26,102,252,0.10), 0 0 0 1px rgba(26,102,252,0.07); }
+    .msg-media-recv { border-radius: 3px 14px 14px 14px; overflow:hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.07), 0 0 0 1px rgba(64,67,91,0.06); }
+    .msg-file-card  { display:flex;align-items:center;gap:12px;padding:12px 14px; }
+    .msg-audio-bar  { display:inline-block; border-radius:2px; }
+    .msg-sticker    { font-size:52px; line-height:1; display:block; }
+
+    /* ── Message entrance animation ── */
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-new { animation: msgIn 0.2s ease-out; }
+
+    /* Past date divider — the chip itself becomes sticky, no duplicate element */
+    .past-date-divider {
+      position: sticky;
+      top: 6px;
+      z-index: 10;
+    }
+    /* Left line grows outward from right edge (chip side) */
+    .past-date-divider .divider-line:first-child {
+      transform-origin: right center;
+      transition: opacity 0.38s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    /* Right line grows outward from left edge (chip side) */
+    .past-date-divider .divider-line:last-child {
+      transform-origin: left center;
+      transition: opacity 0.38s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .past-date-divider.is-stuck .divider-line {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    .past-date-divider:not(.is-stuck) .divider-line {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(8px);
+      background: #40435B; color: white; padding: 10px 20px; border-radius: 8px;
+      font-family: 'Lato', sans-serif; font-size: 14px;
+      z-index: 300; opacity: 0; transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(2px);
+      z-index: 200; display: none;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: white; border-radius: 14px; padding: 28px;
+      min-width: 420px; max-width: 520px; width: 100%;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.18);
+      animation: msgIn 0.2s ease-out;
+    }
+
+    /* ── Right panel toggle (tablet) ── */
+    .panel-toggle {
+      display: none;
+      position: fixed; bottom: 88px; right: 16px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #1A66FC; color: white; border: none; cursor: pointer;
+      align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(26,102,252,0.4);
+      z-index: 50; transition: background 0.15s;
+    }
+    .panel-toggle:hover { background: #0347CE; }
+
+    /* ── Panel resizer handles ── */
+    .panel-resizer {
+      flex-shrink: 0; width: 5px; background: transparent;
+      cursor: ew-resize; position: relative; z-index: 10;
+      transition: background 0.12s;
+    }
+    .panel-resizer:hover, .panel-resizer.resizing { background: #EBF1FF; }
+    .panel-resizer::after {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 2px; height: 36px; border-radius: 1px;
+      background: #ACAEC4; opacity: 0; transition: opacity 0.12s;
+    }
+    .panel-resizer:hover::after, .panel-resizer.resizing::after { opacity: 1; }
+
+    /* ── Sin asignar / Resueltos screens ── */
+    .screen-overlay {
+      position:fixed; inset:0; background:#F4F5FA;
+      z-index:50; display:none; flex-direction:column; overflow:hidden;
+      animation: fadeSlideIn 0.18s ease-out;
+    }
+    .screen-overlay.open { display:flex; }
+    @keyframes fadeSlideIn {
+      from { opacity:0; transform:translateY(6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    /* Table */
+    .conv-table { width:100%; border-collapse:collapse; }
+    .conv-table thead th {
+      padding:10px 16px; text-align:left;
+      font-family:'Inter',sans-serif; font-size:11px; font-weight:600;
+      color:#9CA3AF; letter-spacing:0.4px; text-transform:uppercase;
+      background:white; border-bottom:1px solid #ECEDF3;
+      position:sticky; top:0; z-index:3; white-space:nowrap;
+    }
+    .conv-table thead th:first-child { padding-left:20px; width:28px; }
+    .conv-table thead th:last-child  { text-align:right; padding-right:20px; }
+    .conv-table tbody tr {
+      border-bottom:1px solid #F3F4F8;
+      cursor:pointer; transition:background 0.1s;
+    }
+    .conv-table tbody tr:hover { background:#F8F9FB; }
+    .conv-table tbody tr:last-child { border-bottom:none; }
+    .conv-table td { padding:12px 16px; vertical-align:middle; }
+    .conv-table td:first-child { padding-left:20px; width:28px; }
+    .conv-table td:last-child  { text-align:right; padding-right:20px; }
+    .priority-sep td {
+      padding:7px 16px 6px; background:#F9FAFB;
+      border-top:1px solid #ECEDF3; border-bottom:1px solid #ECEDF3;
+      cursor:default !important;
+    }
+    .priority-sep:hover { background:#F9FAFB !important; }
+
+    /* ── Resueltos modal ── */
+    #resueltosOverlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.35); backdrop-filter:blur(2px);
+      z-index:200; display:none;
+      align-items:center; justify-content:center;
+    }
+    #resueltosOverlay.open { display:flex; }
+    .res-metric {
+      background:#F9FAFB; border:1px solid #ECEDF3;
+      border-radius:10px; padding:18px 20px;
+      display:flex; flex-direction:column; gap:4px;
+    }
+
+    /* ── Right panel collapse ── */
+    #patientPanel { transition: width 0.2s cubic-bezier(0.4,0,0.2,1); }
+    #patientPanel.collapsed #patientPanelContent { display: none !important; }
+    #patientPanel:not(.collapsed) #collapseExpandTab { display: none !important; }
+
+    /* ── Past conversation sections ── */
+    .past-section { background: rgba(235,238,248,0.5); border-radius: 12px; padding: 4px 0 8px; margin-bottom: 4px; }
+    .past-section-label { font-size:11px; color:#9CA3AF; background:#ECEDF3; padding:3px 12px; border-radius:9999px; font-family:'Lato',sans-serif; }
+
+    /* ── Filter chips ── */
+    .filt-chip {
+      padding: 4px 11px; border-radius: 20px; border: 1px solid #E0E1E9;
+      background: white; font-family: 'Lato', sans-serif; font-size: 12px;
+      color: #6B6F93; cursor: pointer; transition: all 0.12s;
+    }
+    .filt-chip.active { background: #1A66FC; border-color: #1A66FC; color: white; }
+    .filt-chip:hover:not(.active) { border-color: #ACAEC4; background: #F8F9FB; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1200px) {
+      #patientPanel { display: none; }
+      #patientPanel.panel-open { display: flex; position: fixed; right: 0; top: 71px; bottom: 0; z-index: 100; box-shadow: -8px 0 24px rgba(0,0,0,0.12); }
+      .panel-toggle { display: flex; }
+      .panel-resizer { display: none; }
+    }
+    @media (max-width: 768px) {
+      #chatListPanel { width: 200px; }
+      .qa-btn span { display: none; }
+      .qa-btn { padding: 8px; }
+    }
+
+    /* ── Demo Switcher ── */
+    .demo-switcher {
+      position: fixed; bottom: 24px; left: 16px; z-index: 400;
+      width: 223px;
+      background: #18181B; border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 12px 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(251,191,36,0.12);
+      display: flex; flex-direction: column; gap: 10px;
+      user-select: none;
+      opacity: 0.28;
+      transition: opacity 0.35s ease;
+    }
+    .demo-switcher:hover { opacity: 1; }
+
+    .demo-switcher-label {
+      font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700;
+      color: #FBB024; letter-spacing: 1.8px; text-transform: uppercase;
+      padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .demo-switcher-btns { display: flex; gap: 5px; }
+    .demo-switch-btn {
+      flex: 1; padding: 7px 0; border-radius: 8px; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+      transition: all 0.15s; letter-spacing: 0.2px;
+    }
+    .demo-switch-btn.active { background: #FBB024; color: #18181B; box-shadow: 0 2px 8px rgba(251,176,36,0.35); }
+    .demo-switch-btn:not(.active) { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.4); }
+    .demo-switch-btn:not(.active):hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.75); }
+
+    /* Info button */
+    .demo-info-btn {
+      width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.5); font-size: 10px; font-family: 'Inter', sans-serif;
+      font-weight: 700; transition: background 0.15s, color 0.15s, border-color 0.15s;
+      margin-left: auto;
+    }
+    .demo-info-btn:hover,
+    .demo-info-btn.active { background: rgba(251,176,36,0.2); color: #FBB024; border-color: rgba(251,176,36,0.4); }
+
+    /* Info panel */
+    .demo-info-panel {
+      position: absolute; bottom: calc(100% + 10px); left: 0; right: 0;
+      background: #1E1E22; border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 14px 14px 12px;
+      box-shadow: 0 -8px 28px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; gap: 10px;
+    }
+    .demo-info-panel.open { display: flex; }
+    .demo-info-section-title {
+      font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700;
+      color: rgba(255,255,255,0.3); letter-spacing: 1.4px; text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .demo-info-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-family: 'Lato', sans-serif; font-size: 12px; color: rgba(255,255,255,0.65);
+      line-height: 1.4; padding: 3px 0;
+    }
+    .demo-info-item .di-icon {
+      flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center; font-size: 9px;
+      margin-top: 1px;
+    }
+    .di-red  { background: rgba(239,68,68,0.18);  color: #F87171; }
+    .di-green{ background: rgba(16,185,129,0.18); color: #34D399; }
+    .demo-info-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 2px 0; }
+
+    /* ── MVP filter quick chips ── */
+    #mvpFilterChips { display: none; margin-top: 8px; gap: 5px; flex-wrap: wrap; }
+    .mvp-filter-dd {
+      position: relative; display: inline-block;
+    }
+    .mvp-filt-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px; border: 1px solid #E0E1E9;
+      background: white; font-family: 'Lato', sans-serif; font-size: 12px;
+      color: #6B6F93; cursor: pointer; transition: all 0.12s; white-space: nowrap;
+    }
+    .mvp-filt-btn:hover { border-color: #ACAEC4; background: #F8F9FB; }
+    .mvp-filt-btn.has-active { background: #EEF4FF; border-color: #1A66FC; color: #1A66FC; }
+    .mvp-dd-panel {
+      position: absolute; top: calc(100% + 4px); left: 0;
+      background: white; border: 1px solid #E0E1E9; border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1); z-index: 60;
+      min-width: 130px; padding: 6px; display: none;
+    }
+    .mvp-dd-panel.open { display: block; }
+    .mvp-dd-opt {
+      padding: 7px 10px; cursor: pointer; border-radius: 7px;
+      font-family: 'Lato', sans-serif; font-size: 13px; color: #40435B;
+      transition: background 0.1s; display: flex; align-items: center; gap: 7px;
+    }
+    .mvp-dd-opt:hover { background: #F8F9FB; }
+    .mvp-dd-opt.active { background: #EEF4FF; color: #1A66FC; font-weight: 700; }
+    .mvp-dd-opt.active::after { content: '✓'; margin-left: auto; font-size: 11px; }
+
+    /* ── V1 annotation note ── */
+    .v1-note {
+      display: none; margin-top: 8px; padding: 8px 10px;
+      background: #FFFBEB; border: 1px dashed #F59E0B; border-radius: 8px;
+      font-family: 'Lato', sans-serif; font-size: 11px; color: #92400E;
+      line-height: 1.4;
+    }
+    .v1-note::before { content: '⚠ '; font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════════════════ -->
+<div id="app" style="display:flex; height:100vh; background:#F9FAFB;">
+
+  <!-- ── MVP SIDEBAR (colapsado) ── -->
+  <nav id="mvpSidebar" style="
+    flex-shrink:0; width:48px; background:white;
+    border-right:1px solid #E0E1E9;
+    display:flex; flex-direction:column;
+    align-items:center; padding:12px 0;
+    z-index:20;
+  ">
+    <!-- Logo -->
+    <div style="width:32px;height:32px;border-radius:50%;background:#1A66FC;display:flex;align-items:center;justify-content:center;margin-bottom:8px;flex-shrink:0;">
+      <span style="font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:white;letter-spacing:-0.5px;">O</span>
+    </div>
+    <!-- Expand toggle -->
+    <button onclick="showToast('Expandir sidebar')" title="Expandir"
+      style="width:24px;height:24px;background:#F4F5FA;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;transition:background 0.12s;"
+      onmouseenter="this.style.background='#E8EAEF'" onmouseleave="this.style.background='#F4F5FA'">
+      <i class="fa-solid fa-chevron-right" style="font-size:9px;color:#9CA3AF;"></i>
+    </button>
+    <!-- Nav items -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+      <button onclick="showToast('Inicio')" title="Inicio"
+        style="width:36px;height:36px;border:none;border-radius:10px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.12s;"
+        onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='none'">
+        <i class="fa-solid fa-house" style="font-size:15px;color:#9CA3AF;"></i>
+      </button>
+      <button title="Conversaciones"
+        style="width:36px;height:36px;border:none;border-radius:10px;background:#EEF4FF;cursor:default;display:flex;align-items:center;justify-content:center;">
+        <i class="fa-regular fa-comment" style="font-size:15px;color:#1A66FC;"></i>
+      </button>
+    </div>
+    <!-- Bottom items -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:auto;">
+      <button onclick="showToast('Ayuda')" title="Ayuda"
+        style="width:36px;height:36px;border:none;border-radius:10px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.12s;"
+        onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='none'">
+        <i class="fa-regular fa-circle-question" style="font-size:15px;color:#9CA3AF;"></i>
+      </button>
+      <button onclick="showToast('Cerrar sesión')" title="Cerrar sesión"
+        style="width:36px;height:36px;border:none;border-radius:10px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.12s;"
+        onmouseenter="this.style.background='#FEF2F2'" onmouseleave="this.style.background='none'">
+        <i class="fa-solid fa-arrow-right-from-bracket" style="font-size:14px;color:#9CA3AF;"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── CONTENT COLUMN (headers + main row) ── -->
+  <div id="contentColumn" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;">
+
+  <!-- ── MVP HEADER ── -->
+  <header id="appHeaderMVP" style="
+    flex-shrink:0; height:64px; background:white;
+    border-bottom:1px solid #E5E7EB;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px 0 20px; z-index:20;
+  ">
+    <h1 class="font-inter" style="font-weight:600;font-size:17px;color:#101828;letter-spacing:-0.3px;">Conversaciones</h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button onclick="showToast('Notificaciones')"
+        style="position:relative;width:38px;height:38px;background:none;border:none;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.12s;"
+        onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='none'">
+        <i class="fa-regular fa-bell" style="color:#40435B;font-size:17px;"></i>
+        <span style="position:absolute;top:5px;right:4px;min-width:16px;height:16px;background:#1A66FC;color:white;border-radius:9999px;font-size:9px;font-weight:700;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;border:2px solid white;padding:0 3px;">2</span>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 10px 5px 12px;border:1px solid #E0E1E9;border-radius:10px;cursor:pointer;transition:background 0.12s;background:white;"
+           onclick="showToast('Perfil de usuario')"
+           onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='white'">
+        <span class="font-lato" style="font-size:13.5px;font-weight:600;color:#40435B;white-space:nowrap;">López, Marcos</span>
+        <div style="width:28px;height:28px;border-radius:50%;background:#EEF4FF;border:1px solid #DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-regular fa-user" style="color:#1A66FC;font-size:12px;"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── V1 HEADER ── -->
+  <header id="appHeaderV1" style="
+    flex-shrink:0; height:71px; background:white;
+    border-bottom:1px solid #E5E7EB;
+    display:none; align-items:center; justify-content:space-between;
+    padding:0 24px 0 16px; z-index:20;
+  ">
+    <!-- Left: search + title + action buttons -->
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;border-radius:8px;transition:background 0.12s;" onclick="showToast('Búsqueda global')" onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='none'">
+        <i class="fa-solid fa-magnifying-glass" style="color:#6B6F93;font-size:15px;"></i>
+      </button>
+      <div style="width:1px;height:28px;background:#E0E1E9;flex-shrink:0;"></div>
+      <h1 class="font-inter" style="font-weight:600;font-size:17px;color:#101828;letter-spacing:-0.3px;white-space:nowrap;">Recepción de atención</h1>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-left:12px;">
+
+        <!-- Sin asignar -->
+        <button id="btnSinAsignar" onclick="openSinAsignar()" style="
+          position:relative; display:flex; align-items:center; gap:8px;
+          padding:7px 15px; background:white;
+          border:2px solid #E0E1E9; border-radius:10px;
+          cursor:pointer; transition:border-color 0.15s, background 0.15s;
+        " onmouseenter="this.style.borderColor='#ACAEC4';this.style.background='#F9FAFB'" onmouseleave="this.style.borderColor='#E0E1E9';this.style.background='white'">
+          <span style="
+            position:absolute; top:-9px; left:-8px;
+            background:#F54900; color:white;
+            font-family:'Inter',sans-serif; font-size:11px; font-weight:700;
+            line-height:1; border-radius:9999px; padding:3px 7px;
+            border:2px solid white; white-space:nowrap;
+          ">200</span>
+          <i class="fa-regular fa-envelope" style="color:#6B6F93;font-size:15px;"></i>
+          <span class="font-lato" style="font-size:14px;font-weight:700;color:#40435B;">Sin asignar</span>
+        </button>
+
+        <!-- Resueltos -->
+        <button id="btnResueltos" onclick="openResueltos()" style="
+          display:flex; align-items:center; gap:8px;
+          padding:7px 15px; background:white;
+          border:2px solid #E0E1E9; border-radius:10px;
+          cursor:pointer; transition:border-color 0.15s, background 0.15s;
+        " onmouseenter="this.style.borderColor='#ACAEC4';this.style.background='#F9FAFB'" onmouseleave="this.style.borderColor='#E0E1E9';this.style.background='white'">
+          <i class="fa-solid fa-check" style="color:#6B6F93;font-size:15px;"></i>
+          <span class="font-lato" style="font-size:14px;font-weight:700;color:#40435B;">Resueltos</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Right: Cerrar recepción -->
+    <button style="display:flex;align-items:center;gap:5px;border:none;background:none;cursor:pointer;padding:0 10px;" onclick="showToast('Cerrando recepción...')">
+      <i class="fa-solid fa-chevron-down" style="color:#0347CE;font-size:11px;"></i>
+      <span class="font-inter" style="font-size:14px;color:#0347CE;letter-spacing:-0.15px;">Cerrar recepción</span>
+    </button>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <div style="display:flex;flex:1;overflow:hidden;">
+
+    <!-- ════════════════════════════
+         LEFT: CHAT LIST
+    ════════════════════════════ -->
+    <aside id="chatListPanel" style="
+      flex-shrink:0; width:255px; background:white;
+      border-right:1px solid #E0E1E9;
+      display:flex; flex-direction:column; overflow:hidden;
+    ">
+      <!-- Count header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px;border-bottom:1px solid #E0E1E9;">
+        <span id="convCountLabel" class="font-lato" style="font-weight:700;font-size:16px;color:#40435B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;">3 conversaciones activas</span>
+        <i class="fa-regular fa-comments" style="color:#40435B;font-size:20px;flex-shrink:0;"></i>
+      </div>
+
+      <!-- Search + filter -->
+      <div style="padding:12px 14px 0;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;background:white;border:1px solid #E0E1E9;border-radius:8px;padding:0 12px;height:34px;transition:border-color 0.12s;" onfocusin="this.style.borderColor='#ACAEC4'" onfocusout="this.style.borderColor='#E0E1E9'">
+            <i class="fa-solid fa-magnifying-glass" style="color:#ACAEC4;font-size:12px;flex-shrink:0;"></i>
+            <input id="searchInput" type="text" placeholder="Buscar conversación…" oninput="filterConversations()"
+              class="font-lato" style="flex:1;border:none;outline:none;font-size:13px;color:#40435B;background:transparent;min-width:0;">
+          </div>
+          <button id="filterBtn" onclick="toggleFilterPanel()" title="Filtros"
+            style="flex-shrink:0;width:34px;height:34px;background:white;border:1px solid #E0E1E9;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.12s,background 0.12s;position:relative;"
+            onmouseenter="this.style.borderColor='#ACAEC4';this.style.background='#F8F9FB'" onmouseleave="if(!filterOpen){this.style.borderColor='#E0E1E9';this.style.background='white'}">
+            <i class="fa-solid fa-sliders" style="color:#40435B;font-size:13px;"></i>
+            <span id="filterDot" style="display:none;position:absolute;top:5px;right:5px;width:6px;height:6px;background:#1A66FC;border-radius:50%;"></span>
+          </button>
+        </div>
+        <!-- Filter panel -->
+        <div id="filterPanel" style="display:none;margin-top:10px;padding:12px;background:#F8F9FB;border:1px solid #ECEDF3;border-radius:10px;">
+          <p class="font-lato" style="font-size:11px;font-weight:700;color:#ACAEC4;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Estado</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+            <button class="filt-chip" id="filt-status-Abierto"    onclick="toggleFilter('status','Abierto')">Abierto</button>
+            <button class="filt-chip" id="filt-status-En_curso"   onclick="toggleFilter('status','En curso')">En curso</button>
+            <button class="filt-chip" id="filt-status-Resuelto"   onclick="toggleFilter('status','Resuelto')">Resuelto</button>
+            <button class="filt-chip" id="filt-status-Cerrado"    onclick="toggleFilter('status','Cerrado')">Cerrado</button>
+          </div>
+          <p class="font-lato" style="font-size:11px;font-weight:700;color:#ACAEC4;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Cola de atención</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+            <button class="filt-chip" id="filt-queue-Médica"      onclick="toggleFilter('queue','Médica')">Médica</button>
+            <button class="filt-chip" id="filt-queue-Administrativa" onclick="toggleFilter('queue','Administrativa')">Administrativa</button>
+            <button class="filt-chip" id="filt-queue-Urgencias"   onclick="toggleFilter('queue','Urgencias')">Urgencias</button>
+          </div>
+          <p class="font-lato" style="font-size:11px;font-weight:700;color:#ACAEC4;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Canal</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <button class="filt-chip" id="filt-channel-WhatsApp"  onclick="toggleFilter('channel','WhatsApp')">WhatsApp</button>
+            <button class="filt-chip" id="filt-channel-Email"     onclick="toggleFilter('channel','Email')">Email</button>
+          </div>
+          <button onclick="clearAllFilters()" style="margin-top:10px;width:100%;background:none;border:1px solid #E0E1E9;border-radius:7px;padding:6px;font-family:'Lato',sans-serif;font-size:12px;color:#6B6F93;cursor:pointer;transition:background 0.12s;" onmouseenter="this.style.background='#ECEDF3'" onmouseleave="this.style.background='none'">Limpiar filtros</button>
+        </div>
+        <!-- V1 note -->
+        <div id="v1FilterNote" class="v1-note">Experiencia de filtros sin terminar de definir</div>
+      </div>
+
+      <!-- MVP quick filters (shown instead of panel in MVP mode) -->
+      <div id="mvpFilterChips" style="padding:0 14px;">
+        <div class="mvp-filter-dd" id="mvpPriorityDd">
+          <button class="mvp-filt-btn" id="mvpPriorityBtn" onclick="toggleMvpDd('mvpPriorityPanel')">
+            <i class="fa-solid fa-flag" style="font-size:10px;"></i>
+            <span id="mvpPriorityLabel">Prioridad</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:9px;opacity:0.6;"></i>
+          </button>
+          <div class="mvp-dd-panel" id="mvpPriorityPanel">
+            <div class="mvp-dd-opt" onclick="setMvpFilter('priority','Baja')">Baja</div>
+            <div class="mvp-dd-opt" onclick="setMvpFilter('priority','Normal')">Normal</div>
+            <div class="mvp-dd-opt" onclick="setMvpFilter('priority','Alta')">Alta</div>
+            <div class="mvp-dd-opt" onclick="setMvpFilter('priority','Urgente')">Urgente</div>
+          </div>
+        </div>
+        <div class="mvp-filter-dd" id="mvpStatusDd">
+          <button class="mvp-filt-btn" id="mvpStatusBtn" onclick="toggleMvpDd('mvpStatusPanel')">
+            <i class="fa-solid fa-circle-half-stroke" style="font-size:10px;"></i>
+            <span id="mvpStatusLabel">Estado</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:9px;opacity:0.6;"></i>
+          </button>
+          <div class="mvp-dd-panel" id="mvpStatusPanel">
+            <div class="mvp-dd-opt" onclick="setMvpFilter('status','Abierto')">Abierto</div>
+            <div class="mvp-dd-opt" onclick="setMvpFilter('status','En curso')">En curso</div>
+            <div class="mvp-dd-opt" onclick="setMvpFilter('status','Resuelto')">Resuelto</div>
+            <div class="mvp-dd-opt" onclick="setMvpFilter('status','Cerrado')">Cerrado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unread toggle -->
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:8px 16px 9px;border-bottom:1px solid #E0E1E9;">
+        <span class="font-lato" style="font-size:12px;color:#6B6F93;">Mostrar solo no leídos</span>
+        <label class="toggle">
+          <input type="checkbox" id="unreadToggle" onchange="filterConversations()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Conversation list -->
+      <div id="convList" style="flex:1;overflow-y:auto;"></div>
+    </aside>
+
+    <div id="resizerLeft" class="panel-resizer"></div>
+
+    <!-- ════════════════════════════
+         CENTER: CHAT
+    ════════════════════════════ -->
+    <main style="
+      display:flex; flex-direction:column; flex:1; background:white;
+      box-shadow:-4px 0 12px 0 rgba(0,0,0,0.08); overflow:hidden; min-width:0;
+    ">
+      <!-- Patient header bar -->
+      <div style="
+        flex-shrink:0; background:white; border-bottom:1px solid #ECEDF3;
+        height:64px; padding:0 20px;
+        display:flex; align-items:center; justify-content:space-between; gap:16px;
+      ">
+        <!-- Contact info -->
+        <button style="
+          display:flex;align-items:center;gap:10px;min-width:0;
+          background:none;border:none;padding:6px 8px;border-radius:8px;cursor:pointer;
+          transition:background 0.12s;
+        " onmouseenter="this.style.background='#F4F6FA'" onmouseleave="this.style.background='none'"
+           onclick="showToast('Perfil del contacto')">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span id="contactName" class="font-lato" style="font-weight:700;font-size:15px;color:#2D3142;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Luciano Alberti</span>
+              <i class="fa-solid fa-chevron-down" style="color:#ACAEC4;font-size:10px;flex-shrink:0;"></i>
+            </div>
+            <span id="contactPhone" class="font-lato" style="font-size:11.5px;color:#9CA3AF;">+54 9 3764 6710204</span>
+          </div>
+        </button>
+
+        <!-- Chat tabs -->
+        <div style="display:flex;align-items:center;gap:2px;background:#F0F2F8;padding:3px;border-radius:10px;flex-shrink:0;">
+          <button id="tabActiveBtn" onclick="switchChatTab('active')"
+            class="chat-tab-active font-lato"
+            style="height:28px;border-radius:8px;padding:0 10px;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;color:#2D3142;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+            <span style="width:7px;height:7px;border-radius:50%;background:#1DCCA3;flex-shrink:0;"></span>
+            Chat Activo
+          </button>
+          <button id="tabPastBtn" onclick="switchChatTab('past')"
+            class="font-lato"
+            style="height:28px;border-radius:8px;padding:0 10px;border:none;cursor:pointer;background:transparent;font-size:13px;font-weight:500;color:#6B6F93;white-space:nowrap;transition:color 0.12s;display:flex;align-items:center;gap:6px;">
+            <span id="pastTabLabel">Conversaciones Pasadas</span><span id="pastCountBadge" style="display:none;min-width:16px;height:16px;background:#9CA3AF;border-radius:9999px;font-size:10px;font-weight:700;color:white;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;"></span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Subject + Status bar -->
+      <div style="
+        flex-shrink:0; background:#FAFBFC; border-bottom:1px solid #ECEDF3;
+        height:42px; padding:0 20px;
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+      ">
+        <!-- Subject -->
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+          <span class="font-lato" style="font-size:12px;color:#ACAEC4;flex-shrink:0;font-weight:500;letter-spacing:0.2px;text-transform:uppercase;">Asunto</span>
+          <span id="subjectText" class="font-lato" onclick="editSubject()" title="Clic para editar"
+            style="font-size:13px;color:#6B6F93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;border-radius:5px;padding:2px 6px;transition:background 0.12s;"
+            onmouseenter="this.style.background='#F0F2FA';this.style.color='#40435B'" onmouseleave="this.style.background='';this.style.color='#6B6F93'">
+            Problemas para acceder a resultados de análisis de sangre de la semana pasada
+          </span>
+          <input id="subjectInput" class="font-lato" type="text"
+            style="display:none;flex:1;font-size:13px;color:#2D3142;border:1.5px solid #1A66FC;border-radius:6px;padding:2px 8px;outline:none;height:26px;background:white;min-width:0;"
+            onblur="saveSubject()" onkeydown="if(event.key==='Enter')saveSubject();if(event.key==='Escape')cancelSubject()">
+        </div>
+
+        <!-- Prioridad -->
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span class="font-lato" style="font-size:12px;color:#ACAEC4;font-weight:500;letter-spacing:0.2px;text-transform:uppercase;">Prioridad</span>
+          <div style="position:relative;">
+            <button onclick="togglePriorityDd(event)" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;">
+              <span id="priorityBadge" class="font-lato"
+                style="display:inline-flex;align-items:center;gap:5px;font-weight:600;font-size:12px;padding:4px 10px;border-radius:20px;transition:filter 0.12s;background:#F3F4F6;color:#6B7280;"
+                onmouseenter="this.style.filter='brightness(0.92)'" onmouseleave="this.style.filter='none'">Normal<i class="fa-solid fa-chevron-down" style="font-size:8px;opacity:0.7;"></i></span>
+            </button>
+            <div id="priorityDd" class="status-dropdown">
+              <div class="status-opt" onclick="setPriority('Baja')">Baja</div>
+              <div class="status-opt" onclick="setPriority('Normal')">Normal</div>
+              <div class="status-opt" onclick="setPriority('Alta')">Alta</div>
+              <div class="status-opt" onclick="setPriority('Urgente')">Urgente</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Separador -->
+        <div style="width:1px;height:18px;background:#ECEDF3;flex-shrink:0;"></div>
+
+        <!-- Estado -->
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span class="font-lato" style="font-size:12px;color:#ACAEC4;font-weight:500;letter-spacing:0.2px;text-transform:uppercase;">Estado</span>
+          <div style="position:relative;">
+            <button id="statusBtn" onclick="toggleStatusDd(event)"
+              style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;">
+              <span id="statusBadge" class="font-lato status-abierto"
+                style="display:inline-flex;align-items:center;gap:5px;font-weight:600;font-size:12px;padding:4px 10px;border-radius:20px;transition:filter 0.12s;"
+                onmouseenter="this.style.filter='brightness(0.92)'" onmouseleave="this.style.filter='none'">Abierto<i class="fa-solid fa-chevron-down" style="font-size:8px;opacity:0.7;"></i></span>
+            </button>
+            <div id="statusDd" class="status-dropdown">
+              <div class="status-opt" onclick="setStatus('Abierto')">Abierto</div>
+              <div class="status-opt" onclick="setStatus('En curso')">En curso</div>
+              <div class="status-opt" onclick="setStatus('Resuelto')">Resuelto</div>
+              <div class="status-opt" onclick="setStatus('Cerrado')">Cerrado</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Separador -->
+        <div style="width:1px;height:18px;background:#ECEDF3;flex-shrink:0;"></div>
+
+        <!-- View mode toggle: Chat / Auditoría -->
+        <div id="viewModeToggle" style="display:flex;align-items:center;gap:2px;background:#F0F2F8;padding:3px;border-radius:8px;flex-shrink:0;">
+          <button id="viewModeChat" onclick="setViewMode('chat')"
+            class="font-lato"
+            style="height:24px;border-radius:6px;padding:0 9px;border:none;cursor:pointer;background:white;box-shadow:0 1px 2px rgba(0,0,0,0.08);font-size:12px;font-weight:600;color:#2D3142;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+            <i class="fa-regular fa-comment" style="font-size:10px;"></i> Chat
+          </button>
+          <button id="viewModeAudit" onclick="setViewMode('audit')"
+            class="font-lato"
+            style="height:24px;border-radius:6px;padding:0 9px;border:none;cursor:pointer;background:transparent;font-size:12px;font-weight:500;color:#6B6F93;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+            <i class="fa-solid fa-list-ul" style="font-size:10px;"></i> Auditoría
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages area -->
+      <div id="messagesArea" style="flex:1;overflow-y:auto;background:#F4F5FA;position:relative;">
+        <!-- Top fade overlay — gradient that softens the stuck chip edge -->
+        <div id="pastTopFade" style="position:sticky;top:0;z-index:9;height:0;overflow:visible;pointer-events:none;display:none;">
+          <div id="pastTopFadeGrad" style="height:36px;"></div>
+        </div>
+        <!-- Combined content: past groups + current conversation -->
+        <div id="chatContent" style="padding:20px 32px;display:block;"></div>
+      </div>
+
+      <!-- Past-mode alert (sits between messages and input, always accessible) -->
+      <div id="pastBanner" style="display:none;background:#FFF4ED;border-top:2px solid #FB923C;padding:8px 20px;align-items:center;gap:10px;flex-shrink:0;">
+        <i class="fa-solid fa-clock-rotate-left" style="color:#EA580C;font-size:12px;flex-shrink:0;"></i>
+        <span class="font-lato" style="font-size:12.5px;color:#C2410C;font-weight:600;">Estás viendo una conversación pasada</span>
+        <button onclick="switchChatTab('active')" style="margin-left:auto;font-size:12px;color:#C2410C;background:none;border:none;cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;text-decoration:underline;white-space:nowrap;">Volver al chat actual →</button>
+      </div>
+
+      <!-- Action bar + Input -->
+      <div id="normalInputArea" style="
+        flex-shrink:0; background:white; border-top:1px solid #ECEDF3;
+        padding:12px 16px 14px; display:flex; flex-direction:column; gap:10px;
+      ">
+        <!-- Quick actions row -->
+        <div id="qaActionsRow" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;">
+            <button class="qa-btn" onclick="openModal('turno')">
+              <i class="fa-regular fa-calendar" style="color:#6B6F93;font-size:12px;"></i>
+              <span class="font-lato" style="font-weight:500;font-size:12.5px;color:#6B6F93;">Nuevo turno</span>
+            </button>
+            <button class="qa-btn" onclick="openModal('nota')">
+              <i class="fa-regular fa-file-lines" style="color:#6B6F93;font-size:12px;"></i>
+              <span class="font-lato" style="font-weight:500;font-size:12.5px;color:#6B6F93;">Nueva nota</span>
+            </button>
+            <button class="qa-btn" onclick="openModal('solicitudes')">
+              <i class="fa-regular fa-folder-open" style="color:#6B6F93;font-size:12px;"></i>
+              <span class="font-lato" style="font-weight:500;font-size:12.5px;color:#6B6F93;">Ver solicitudes</span>
+            </button>
+            <button class="qa-btn" onclick="openModal('acciones')">
+              <i class="fa-regular fa-id-card" style="color:#6B6F93;font-size:12px;"></i>
+              <span class="font-lato" style="font-weight:500;font-size:12.5px;color:#6B6F93;">Acciones rápidas</span>
+            </button>
+          </div>
+          <kbd style="background:#F4F6FA;border:1px solid #E0E1E9;border-radius:5px;padding:2px 7px;font-family:'Lato',sans-serif;font-size:11px;color:#ACAEC4;flex-shrink:0;white-space:nowrap;">/</kbd>
+        </div>
+
+        <!-- Input row -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <!-- Expired window: replaces only the input row inside normalInputArea -->
+          <div id="expiredInputBanner" style="display:none;flex:1;align-items:center;gap:8px;">
+            <div style="flex:1;display:flex;align-items:center;gap:10px;background:#F4F6FA;border:1px solid #E8E9F0;border-radius:10px;height:40px;padding:0 14px;">
+              <i class="fa-solid fa-lock" style="color:#ACAEC4;font-size:11px;flex-shrink:0;"></i>
+              <span class="font-lato" style="font-size:13px;color:#ACAEC4;">Ventana de 24 hs cerrada</span>
+            </div>
+            <button onclick="showTemplateModal()" style="height:40px;padding:0 16px;background:#1A66FC;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:7px;flex-shrink:0;white-space:nowrap;transition:background 0.15s;box-shadow:0 2px 8px rgba(26,102,252,0.22);"
+              onmouseenter="this.style.background='#0347CE'" onmouseleave="this.style.background='#1A66FC'">
+              <i class="fa-brands fa-whatsapp" style="color:white;font-size:14px;"></i>
+              <span class="font-lato" style="font-size:13.5px;font-weight:700;color:white;">Nuevo chat con plantilla</span>
+            </button>
+          </div>
+          <!-- Normal message input -->
+          <div id="normalMsgInput" style="display:flex;align-items:center;gap:8px;flex:1;">
+            <div class="msg-input-wrap" style="flex:1;background:#F4F6FA;border:1px solid #E8E9F0;border-radius:10px;padding:0 12px;height:40px;display:flex;align-items:center;gap:8px;transition:border-color 0.15s,box-shadow 0.15s;">
+              <input id="msgInput" type="text"
+                placeholder="Escribe un mensaje..."
+                class="font-lato"
+                style="flex:1;border:none;outline:none;font-size:14px;color:#2D3142;background:transparent;"
+                oninput="onMsgInput(this)"
+                onkeydown="onMsgKey(event)">
+              <button style="background:none;border:none;cursor:pointer;padding:2px;flex-shrink:0;" onclick="showToast('Adjuntar archivo')" title="Adjuntar">
+                <i class="fa-solid fa-paperclip" style="color:#ACAEC4;font-size:14px;"></i>
+              </button>
+            </div>
+            <button id="sendBtn"
+              style="width:40px;height:40px;background:#1A66FC;border:none;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.45;transition:opacity 0.15s,transform 0.1s;"
+              onclick="sendMessage()"
+              onmouseenter="if(this.style.opacity==='1')this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+              <i class="fa-solid fa-paper-plane" style="color:white;font-size:13px;"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="resizerRight" class="panel-resizer"></div>
+
+    <!-- ════════════════════════════
+         RIGHT: PATIENT CONTEXT
+    ════════════════════════════ -->
+    <aside id="patientPanel" style="
+      flex-shrink:0; width:367px; background:white;
+      border-left:1px solid #E0E1E9;
+      display:flex; flex-direction:column; overflow:hidden;
+    ">
+      <!-- Collapse expand tab (only visible when panel is collapsed) -->
+      <div id="collapseExpandTab" onclick="expandRightPanel()"
+           title="Abrir contexto de salud"
+           style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;background:white;transition:background 0.12s;"
+           onmouseenter="this.style.background='#F4F8FF'" onmouseleave="this.style.background='white'">
+        <i class="fa-solid fa-chevron-left" style="color:#1A66FC;font-size:13px;"></i>
+        <span style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Lato',sans-serif;font-size:11px;color:#9CA3AF;font-weight:600;letter-spacing:0.6px;">Abrir contexto de salud</span>
+      </div>
+      <!-- Panel content (hidden when collapsed) -->
+      <div id="patientPanelContent" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-width:0;">
+      <!-- Tabs -->
+      <div id="ptabsBar" style="display:flex;flex-shrink:0;border-bottom:1px solid #E0E1E9;">
+        <button class="ptab" onclick="switchPtab(0)"
+          style="flex:1;min-width:0;padding:14px 4px;font-family:'Lato',sans-serif;font-weight:700;font-size:13px;text-align:center;border:none;background:none;cursor:pointer;color:#1A66FC;border-bottom:3px solid #1A66FC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          Paciente
+        </button>
+        <button class="ptab" onclick="switchPtab(1)"
+          style="flex:1;min-width:0;padding:14px 4px;font-family:'Lato',sans-serif;font-weight:700;font-size:13px;text-align:center;border:none;background:none;cursor:pointer;color:#6B6F93;border-bottom:2px solid #E0E1E9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          Perfil de salud
+        </button>
+        <button class="ptab" onclick="switchPtab(2)"
+          style="flex:1;min-width:0;padding:14px 4px;font-family:'Lato',sans-serif;font-weight:700;font-size:13px;text-align:center;border:none;background:none;cursor:pointer;color:#6B6F93;border-bottom:2px solid #E0E1E9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          Archivos
+        </button>
+      </div>
+
+      <!-- Tab content -->
+      <div style="flex:1;overflow-y:auto;padding:24px 24px 24px 24px;display:flex;flex-direction:column;gap:24px;" id="ptabContent">
+
+        <!-- TAB 0: Paciente -->
+        <div id="ptab0" style="display:flex;flex-direction:column;gap:24px;">
+
+          <!-- Datos del Paciente -->
+          <div style="background:white;border:1px solid #ECEDF3;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:8px;padding:14px 16px 12px;border-bottom:1px solid #F3F4F8;">
+              <i class="fa-regular fa-user" style="color:#6B6F93;font-size:13px;"></i>
+              <span class="font-inter" style="font-size:13px;font-weight:600;color:#40435B;letter-spacing:-0.1px;">Datos del Paciente</span>
+            </div>
+            <div style="padding:14px 16px 4px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;margin-bottom:16px;">
+              <div style="min-width:0;">
+                <p class="font-inter" style="font-size:11px;color:#6A7282;margin-bottom:2px;">Paciente</p>
+                <p id="pName" class="font-inter" style="font-size:13px;color:#101828;letter-spacing:-0.1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Luis Alberto Aballay</p>
+              </div>
+              <div style="min-width:0;">
+                <p class="font-inter" style="font-size:11px;color:#6A7282;margin-bottom:2px;">Edad</p>
+                <p id="pAge" class="font-inter" style="font-size:13px;color:#101828;letter-spacing:-0.1px;">66 años</p>
+              </div>
+              <div style="min-width:0;">
+                <p class="font-inter" style="font-size:11px;color:#6A7282;margin-bottom:2px;">Documento</p>
+                <p id="pDoc" class="font-inter" style="font-size:13px;color:#101828;letter-spacing:-0.1px;">13165678</p>
+              </div>
+              <div style="min-width:0;">
+                <p class="font-inter" style="font-size:11px;color:#6A7282;margin-bottom:2px;">Teléfono</p>
+                <p id="pPhone" class="font-inter" style="font-size:13px;color:#101828;letter-spacing:-0.1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">+5491164793521</p>
+              </div>
+              <div style="grid-column:1/-1;min-width:0;">
+                <p class="font-inter" style="font-size:11px;color:#6A7282;margin-bottom:2px;">Email</p>
+                <p id="pEmail" class="font-inter" style="font-size:13px;color:#1574AA;letter-spacing:-0.1px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" onclick="showToast('Abriendo cliente de correo...')">fcastelli@sg.com.ar</p>
+              </div>
+            </div>
+            </div><!-- /padding wrapper -->
+          </div><!-- /datos -->
+
+          <!-- Lista de Medicamentos -->
+          <div id="medSection" style="background:white;border:1px solid #ECEDF3;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:8px;padding:14px 16px 12px;border-bottom:1px solid #F3F4F8;">
+              <i class="fa-solid fa-pills" style="color:#6B6F93;font-size:13px;"></i>
+              <span class="font-inter" style="font-size:13px;font-weight:600;color:#40435B;letter-spacing:-0.1px;">Medicación activa</span>
+            </div>
+            <div id="medList" style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;"></div>
+          </div>
+
+        </div><!-- /ptab0 -->
+
+        <!-- TAB 1: Perfil de salud -->
+        <div id="ptab1" style="display:none;flex-direction:column;gap:16px;">
+
+          <!-- Programas de salud -->
+          <div style="background:white;border:1px solid #ECEDF3;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #F3F4F8;">
+              <i class="fa-solid fa-shield-heart" style="color:#6B6F93;font-size:13px;"></i>
+              <span class="font-inter" style="font-size:13px;font-weight:600;color:#40435B;letter-spacing:-0.1px;">Programas activos</span>
+            </div>
+            <div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+              <div style="background:#F9FAFB;border:1px solid #ECEDF3;border-radius:8px;padding:10px 12px;">
+                <p class="font-inter" style="font-size:13px;font-weight:600;color:#2D3142;margin-bottom:2px;">Enfermedad renal crónica</p>
+                <p class="font-inter" style="font-size:11.5px;color:#9CA3AF;">Activo · Seguimiento semestral</p>
+              </div>
+              <div style="background:#F9FAFB;border:1px solid #ECEDF3;border-radius:8px;padding:10px 12px;">
+                <p class="font-inter" style="font-size:13px;font-weight:600;color:#2D3142;margin-bottom:2px;">Diabetes</p>
+                <p class="font-inter" style="font-size:11.5px;color:#9CA3AF;">Activo · Control trimestral</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Órdenes activas -->
+          <div style="background:white;border:1px solid #ECEDF3;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F3F4F8;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i class="fa-regular fa-file-lines" style="color:#6B6F93;font-size:13px;"></i>
+                <span class="font-inter" style="font-size:13px;font-weight:600;color:#40435B;letter-spacing:-0.1px;">Órdenes</span>
+              </div>
+              <span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px;">2 pendientes</span>
+            </div>
+            <div style="padding:4px 0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #F8F9FB;">
+                <div style="flex:1;min-width:0;">
+                  <p class="font-inter" style="font-size:12.5px;font-weight:500;color:#2D3142;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Laboratorio general</p>
+                  <p class="font-inter" style="font-size:11px;color:#9CA3AF;margin-top:1px;">Solicitado 10/10/2025</p>
+                </div>
+                <span style="background:#FEF3C7;color:#92400E;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;margin-left:8px;">Pendiente</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;">
+                <div style="flex:1;min-width:0;">
+                  <p class="font-inter" style="font-size:12.5px;font-weight:500;color:#2D3142;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ecografía renal</p>
+                  <p class="font-inter" style="font-size:11px;color:#9CA3AF;margin-top:1px;">Solicitado 05/10/2025</p>
+                </div>
+                <span style="background:#E0F2FE;color:#0369A1;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;margin-left:8px;">Con turno</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recetas vigentes -->
+          <div style="background:white;border:1px solid #ECEDF3;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F3F4F8;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-prescription" style="color:#6B6F93;font-size:13px;"></i>
+                <span class="font-inter" style="font-size:13px;font-weight:600;color:#40435B;letter-spacing:-0.1px;">Recetas vigentes</span>
+              </div>
+              <span style="background:#FEE2E2;color:#991B1B;font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px;">2 sin dispensar</span>
+            </div>
+            <div style="padding:4px 0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #F8F9FB;">
+                <div style="flex:1;min-width:0;">
+                  <p class="font-inter" style="font-size:12.5px;font-weight:500;color:#2D3142;">Metformina 850 mg</p>
+                  <p class="font-inter" style="font-size:11px;color:#9CA3AF;margin-top:1px;">Vence 15/11/2025</p>
+                </div>
+                <span style="background:#FEE2E2;color:#991B1B;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;margin-left:8px;">Sin dispensar</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;">
+                <div style="flex:1;min-width:0;">
+                  <p class="font-inter" style="font-size:12.5px;font-weight:500;color:#2D3142;">Enalapril 10 mg</p>
+                  <p class="font-inter" style="font-size:11px;color:#9CA3AF;margin-top:1px;">Vence 20/11/2025</p>
+                </div>
+                <span style="background:#FEE2E2;color:#991B1B;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;margin-left:8px;">Sin dispensar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Últimas consultas -->
+          <div style="background:white;border:1px solid #ECEDF3;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #F3F4F8;">
+              <i class="fa-regular fa-calendar-check" style="color:#6B6F93;font-size:13px;"></i>
+              <span class="font-inter" style="font-size:13px;font-weight:600;color:#40435B;letter-spacing:-0.1px;">Últimas consultas</span>
+            </div>
+            <div style="padding:4px 0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #F3F4F8;">
+                <div>
+                  <p class="font-inter" style="font-size:13px;color:#2D3142;font-weight:500;">Clínica General</p>
+                  <p class="font-inter" style="font-size:11.5px;color:#9CA3AF;">Dr. Pérez</p>
+                </div>
+                <p class="font-inter" style="font-size:12px;color:#ACAEC4;">15/10/2025</p>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;">
+                <div>
+                  <p class="font-inter" style="font-size:13px;color:#2D3142;font-weight:500;">Cardiología</p>
+                  <p class="font-inter" style="font-size:11.5px;color:#9CA3AF;">Dra. Romero</p>
+                </div>
+                <p class="font-inter" style="font-size:12px;color:#ACAEC4;">02/09/2025</p>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /ptab1 -->
+
+        <!-- TAB 2: Archivos -->
+        <div id="ptab2" style="display:none;flex-direction:column;gap:16px;">
+
+          <!-- Documentos recientes -->
+          <div style="background:white;border:1px solid #ECEDF3;border-radius:12px;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #F3F4F8;">
+              <i class="fa-regular fa-folder-open" style="color:#6B6F93;font-size:13px;"></i>
+              <span class="font-inter" style="font-size:13px;font-weight:600;color:#40435B;letter-spacing:-0.1px;">Documentos recientes</span>
+            </div>
+            <div style="padding:8px 12px;display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:background 0.12s;"
+                   onmouseenter="this.style.background='#F8F9FB'" onmouseleave="this.style.background='transparent'"
+                   onclick="showToast('Abriendo archivo...')">
+                <div style="width:34px;height:34px;border-radius:8px;background:#FEF2F2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <i class="fa-regular fa-file-pdf" style="color:#EF4444;font-size:15px;"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <p class="font-inter" style="font-size:12.5px;font-weight:600;color:#2D3142;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Resultado_laboratorio_oct2025.pdf</p>
+                  <p class="font-inter" style="font-size:11px;color:#9CA3AF;margin-top:1px;">17 Oct 2025 · 1.2 MB</p>
+                </div>
+                <i class="fa-solid fa-arrow-down-to-line" style="color:#ACAEC4;font-size:12px;flex-shrink:0;"></i>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:background 0.12s;"
+                   onmouseenter="this.style.background='#F8F9FB'" onmouseleave="this.style.background='transparent'"
+                   onclick="showToast('Abriendo archivo...')">
+                <div style="width:34px;height:34px;border-radius:8px;background:#FEF2F2;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <i class="fa-regular fa-file-pdf" style="color:#EF4444;font-size:15px;"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <p class="font-inter" style="font-size:12.5px;font-weight:600;color:#2D3142;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Receta_IBU400_sep2025.pdf</p>
+                  <p class="font-inter" style="font-size:11px;color:#9CA3AF;margin-top:1px;">28 Sep 2025 · 0.4 MB</p>
+                </div>
+                <i class="fa-solid fa-arrow-down-to-line" style="color:#ACAEC4;font-size:12px;flex-shrink:0;"></i>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:background 0.12s;"
+                   onmouseenter="this.style.background='#F8F9FB'" onmouseleave="this.style.background='transparent'"
+                   onclick="showToast('Abriendo archivo...')">
+                <div style="width:34px;height:34px;border-radius:8px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <i class="fa-regular fa-image" style="color:#3B82F6;font-size:15px;"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <p class="font-inter" style="font-size:12.5px;font-weight:600;color:#2D3142;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Radiografia_torax_ago2025.jpg</p>
+                  <p class="font-inter" style="font-size:11px;color:#9CA3AF;margin-top:1px;">14 Ago 2025 · 3.8 MB</p>
+                </div>
+                <i class="fa-solid fa-arrow-down-to-line" style="color:#ACAEC4;font-size:12px;flex-shrink:0;"></i>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /ptab2 -->
+
+      </div><!-- /ptabContent -->
+
+      <!-- Sticky footer button — lives outside scroll area -->
+      <div style="flex-shrink:0;padding:14px 16px;border-top:1px solid #ECEDF3;background:white;">
+        <button onclick="showToast('Abriendo ficha completa del paciente...')"
+          style="width:100%;background:#1A66FC;border:none;border-radius:10px;height:42px;cursor:pointer;transition:background 0.15s,box-shadow 0.15s;box-shadow:0 2px 8px rgba(26,102,252,0.25);"
+          onmouseenter="this.style.background='#0347CE';this.style.boxShadow='0 4px 14px rgba(26,102,252,0.35)'" onmouseleave="this.style.background='#1A66FC';this.style.boxShadow='0 2px 8px rgba(26,102,252,0.25)'">
+          <span class="font-inter" style="font-size:14px;font-weight:600;color:white;letter-spacing:-0.1px;">Ver ficha completa</span>
+        </button>
+      </div>
+
+      </div><!-- /patientPanelContent -->
+    </aside><!-- /patientPanel -->
+
+  </div><!-- /main -->
+  </div><!-- /content column -->
+</div><!-- /app -->
+
+<!-- Tablet toggle button -->
+<button class="panel-toggle" id="panelToggleBtn" onclick="togglePatientPanel()" title="Info del paciente">
+  <i class="fa-solid fa-user" style="font-size:16px;"></i>
+</button>
+
+<!-- ══════════════════════════════════════════════════
+     DEMO SWITCHER
+══════════════════════════════════════════════════ -->
+<div class="demo-switcher" onmouseleave="closeDemoInfo()">
+  <!-- Info panel — appears above when ⓘ is clicked -->
+  <div class="demo-info-panel" id="demoInfoPanel"></div>
+
+  <div class="demo-switcher-label">
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;"><circle cx="5" cy="5" r="4" stroke="#FBB024" stroke-width="1.5"/><path d="M5 3v2.5L6.5 7" stroke="#FBB024" stroke-width="1.2" stroke-linecap="round"/></svg>
+    Demo
+    <button class="demo-info-btn" id="demoInfoBtn" onclick="toggleDemoInfo()" title="Ver qué incluye esta versión"><i class="fa-solid fa-circle-info" style="font-size:9px;"></i></button>
+  </div>
+  <div class="demo-switcher-btns">
+    <button class="demo-switch-btn active" data-mode="mvp" onclick="setDemoMode('mvp')">MVP</button>
+    <button class="demo-switch-btn" data-mode="v1" onclick="setDemoMode('v1')">V1</button>
+  </div>
+</div>
+
+<!-- Past Subject Edit Modal -->
+<div id="pastSubjectOverlay" class="modal-overlay" onclick="if(event.target===this)closePastSubjectModal()">
+  <div class="modal-box" style="max-width:460px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;">
+      <div>
+        <h3 class="font-inter" style="font-size:16px;font-weight:700;color:#101828;letter-spacing:-0.2px;margin-bottom:6px;">Editar asunto</h3>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-flex;align-items:center;gap:4px;background:#F3F4F6;color:#6B7280;font-family:'Lato',sans-serif;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;">
+            <i class="fa-solid fa-lock" style="font-size:9px;"></i> Cerrada
+          </span>
+          <span class="font-lato" style="font-size:12px;color:#ACAEC4;" id="pastSubjectDate">—</span>
+        </div>
+      </div>
+      <button onclick="closePastSubjectModal()" style="flex-shrink:0;width:28px;height:28px;border-radius:7px;border:none;background:#F4F5FA;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;" onmouseenter="this.style.background='#ECEDF3'" onmouseleave="this.style.background='#F4F5FA'">
+        <i class="fa-solid fa-xmark" style="color:#6B6F93;font-size:12px;"></i>
+      </button>
+    </div>
+    <div style="margin-bottom:20px;">
+      <label class="font-lato" style="font-size:13px;color:#6B6F93;display:block;margin-bottom:6px;">Asunto de la conversación</label>
+      <input id="pastSubjectInput" type="text" class="font-lato"
+        style="width:100%;border:1.5px solid #E0E1E9;border-radius:8px;padding:10px 12px;font-size:14px;color:#2D3142;outline:none;transition:border-color 0.15s;"
+        onfocus="this.style.borderColor='#1A66FC'" onblur="this.style.borderColor='#E0E1E9'"
+        onkeydown="if(event.key==='Enter')savePastSubject();if(event.key==='Escape')closePastSubjectModal()">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closePastSubjectModal()" style="flex:1;padding:10px;border:1.5px solid #E0E1E9;border-radius:8px;background:white;font-family:'Lato',sans-serif;font-size:14px;color:#6B6F93;cursor:pointer;transition:background 0.12s;" onmouseenter="this.style.background='#F8F9FB'" onmouseleave="this.style.background='white'">Cancelar</button>
+      <button onclick="savePastSubject()" style="flex:2;padding:10px;background:#1A66FC;border:none;border-radius:8px;color:white;font-family:'Lato',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:background 0.15s;" onmouseenter="this.style.background='#0347CE'" onmouseleave="this.style.background='#1A66FC'">Guardar asunto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Coming Soon Modal -->
+<div id="comingSoonOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(2px);z-index:500;display:none;align-items:center;justify-content:center;" onclick="if(event.target===this)closeComingSoon()">
+  <div style="background:white;border-radius:16px;padding:32px;max-width:380px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,0.18);animation:msgIn 0.2s ease-out;text-align:center;">
+    <div style="width:52px;height:52px;border-radius:50%;background:#FEF3C7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <i class="fa-solid fa-clock" style="color:#F59E0B;font-size:22px;"></i>
+    </div>
+    <h3 class="font-inter" style="font-size:17px;font-weight:700;color:#101828;margin-bottom:8px;letter-spacing:-0.2px;">Próximamente</h3>
+    <p class="font-lato" style="font-size:14px;color:#6B6F93;line-height:1.55;margin-bottom:24px;">La posibilidad de forzar el re-inicio de un chat con plantilla estará disponible en V1.</p>
+    <button onclick="closeComingSoon()" style="width:100%;background:#1A66FC;border:none;border-radius:9px;padding:11px;cursor:pointer;color:white;font-family:'Lato',sans-serif;font-weight:700;font-size:14px;transition:background 0.15s;" onmouseenter="this.style.background='#0347CE'" onmouseleave="this.style.background='#1A66FC'">Entendido</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SIN ASIGNAR OVERLAY
+══════════════════════════════════════════════════ -->
+<div id="sinAsignarOverlay" class="screen-overlay">
+
+  <!-- Header — mismo estilo que el app header -->
+  <div style="flex-shrink:0;height:71px;background:white;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <!-- Back -->
+      <button onclick="closeSinAsignar()" style="display:flex;align-items:center;gap:6px;border:none;background:none;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background 0.12s;" onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='none'">
+        <i class="fa-solid fa-chevron-left" style="color:#6B6F93;font-size:12px;"></i>
+        <span class="font-lato" style="font-size:13px;color:#6B6F93;font-weight:600;">Recepción</span>
+      </button>
+      <div style="width:1px;height:24px;background:#E0E1E9;"></div>
+      <h1 class="font-inter" style="font-size:17px;font-weight:600;color:#101828;letter-spacing:-0.3px;">Sin asignar</h1>
+      <span style="background:#FEF2EE;color:#C2410C;font-size:12px;font-weight:700;padding:3px 10px;border-radius:9999px;border:1px solid #FDCFBC;">200</span>
+    </div>
+    <!-- Filters -->
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="filterTickets('todos',this)" class="tkt-filter filt-chip active">Todos</button>
+      <button onclick="filterTickets('urgente',this)" class="tkt-filter filt-chip" style="display:flex;align-items:center;gap:5px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#EF4444;display:inline-block;"></span>Urgente · 2
+      </button>
+      <button onclick="filterTickets('normal',this)" class="tkt-filter filt-chip" style="display:flex;align-items:center;gap:5px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#9CA3AF;display:inline-block;"></span>Normal · 198
+      </button>
+    </div>
+    <div style="width:120px;"></div><!-- spacer para centrar filtros -->
+  </div>
+
+  <!-- Content -->
+  <div style="flex:1;overflow-y:auto;padding:24px 32px;">
+    <div style="background:white;border:1px solid #E0E1E9;border-radius:12px;overflow:hidden;">
+      <table class="conv-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>#</th>
+            <th>Asunto</th>
+            <th>Paciente</th>
+            <th>Canal</th>
+            <th>Espera</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Urgente -->
+          <tr class="priority-sep">
+            <td colspan="7">
+              <span class="font-lato" style="font-size:11.5px;font-weight:700;color:#EF4444;display:flex;align-items:center;gap:6px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:#EF4444;display:inline-block;"></span>Urgente · 2
+              </span>
+            </td>
+          </tr>
+          <tr onclick="closeSinAsignar();showToast('Abriendo conversación urgente...')">
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#EF4444;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2847</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Dolor de pecho fuerte, necesito ayuda urgente</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 1h 52m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#FEF2F2;color:#DC2626;">Urgente</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F0FF;color:#023BAC;">Abierto</span>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:#EF4444;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">RG</span></div>
+                <span class="font-inter" style="font-size:13px;color:#2D3142;">Roberto Gómez</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">WhatsApp</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;font-weight:600;color:#EF4444;">1h 52m</span></td>
+            <td><button onclick="event.stopPropagation();showToast('Conversación asignada a Dr. García')" style="padding:6px 14px;background:#1A66FC;border:none;border-radius:7px;color:white;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Asignar</button></td>
+          </tr>
+          <tr onclick="closeSinAsignar();showToast('Abriendo conversación urgente...')">
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#EF4444;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2851</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Necesito turno urgente, situación grave</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 2h 14m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#FEF2F2;color:#DC2626;">Urgente</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F0FF;color:#023BAC;">Abierto</span>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:#8B5CF6;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">ML</span></div>
+                <span class="font-inter" style="font-size:13px;color:#2D3142;">María López</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">WhatsApp</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;font-weight:600;color:#EF4444;">2h 14m</span></td>
+            <td><button onclick="event.stopPropagation();showToast('Conversación asignada a Dr. García')" style="padding:6px 14px;background:#1A66FC;border:none;border-radius:7px;color:white;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Asignar</button></td>
+          </tr>
+          <!-- Normal -->
+          <tr class="priority-sep">
+            <td colspan="7">
+              <span class="font-lato" style="font-size:11.5px;font-weight:700;color:#6B6F93;display:flex;align-items:center;gap:6px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:#9CA3AF;display:inline-block;"></span>Normal · 198
+              </span>
+            </td>
+          </tr>
+          <tr onclick="closeSinAsignar();showToast('Abriendo conversación...')">
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#D1D5DB;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2853</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Consulta sobre medicación para la presión</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 28m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#F0F2F8;color:#40435B;">Normal</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F0FF;color:#023BAC;">Abierto</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#06B6D4;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">AF</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">Ana Fernández</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-globe" style="color:#9CA3AF;font-size:12px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">Web</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">28m</span></td>
+            <td><button onclick="event.stopPropagation();showToast('Conversación asignada')" style="padding:6px 14px;background:#1A66FC;border:none;border-radius:7px;color:white;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Asignar</button></td>
+          </tr>
+          <tr onclick="closeSinAsignar();showToast('Abriendo conversación...')">
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#D1D5DB;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2849</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Renovar receta de medicación para hipertensión</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 45m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#FFF3E0;color:#C2410C;">Alta</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#FFF3E0;color:#E65100;">En curso</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#F59E0B;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">CR</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">Carlos Ruiz</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">WhatsApp</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">45m</span></td>
+            <td><button onclick="event.stopPropagation();showToast('Conversación asignada')" style="padding:6px 14px;background:#1A66FC;border:none;border-radius:7px;color:white;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Asignar</button></td>
+          </tr>
+          <tr onclick="closeSinAsignar();showToast('Abriendo conversación...')">
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#D1D5DB;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2846</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Resultados de laboratorio no aparecen en el portal</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 1h 5m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#F0F2F8;color:#40435B;">Normal</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F0FF;color:#023BAC;">Abierto</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#10B981;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">LP</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">Lucía Paz</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-globe" style="color:#9CA3AF;font-size:12px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">Web</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">1h 5m</span></td>
+            <td><button onclick="event.stopPropagation();showToast('Conversación asignada')" style="padding:6px 14px;background:#1A66FC;border:none;border-radius:7px;color:white;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Asignar</button></td>
+          </tr>
+          <tr onclick="closeSinAsignar();showToast('Abriendo conversación...')">
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#D1D5DB;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2844</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Solicito turno con cardiólogo — programa diabetes</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 1h 22m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#F0F2F8;color:#40435B;">Normal</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#FFF3E0;color:#E65100;">En curso</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#3B82F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">JT</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">José Torres</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">WhatsApp</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">1h 22m</span></td>
+            <td><button onclick="event.stopPropagation();showToast('Conversación asignada')" style="padding:6px 14px;background:#1A66FC;border:none;border-radius:7px;color:white;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Asignar</button></td>
+          </tr>
+          <tr onclick="closeSinAsignar();showToast('Abriendo conversación...')">
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#D1D5DB;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2841</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Dudas sobre mi programa de salud renal</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 35m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#F0F2F8;color:#40435B;">Normal</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F0FF;color:#023BAC;">Abierto</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#EC4899;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">MS</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">Marta Sosa</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">WhatsApp</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">35m</span></td>
+            <td><button onclick="event.stopPropagation();showToast('Conversación asignada')" style="padding:6px 14px;background:#1A66FC;border:none;border-radius:7px;color:white;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Asignar</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /sinAsignarOverlay -->
+
+
+<!-- ══════════════════════════════════════════════════
+     RESUELTOS MODAL
+══════════════════════════════════════════════════ -->
+<div id="resueltosOverlay" onclick="closeResueltos(event)">
+  <div onclick="event.stopPropagation()" style="background:white;border-radius:16px;padding:28px 32px;width:520px;box-shadow:0 24px 56px rgba(0,0,0,0.16);animation:msgIn 0.2s ease-out;">
+
+    <!-- Modal header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:9px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid fa-check-double" style="color:#16A34A;font-size:15px;"></i>
+        </div>
+        <div>
+          <h2 class="font-inter" style="font-size:17px;font-weight:600;color:#101828;letter-spacing:-0.3px;">Resueltos</h2>
+          <p class="font-lato" style="font-size:12px;color:#9CA3AF;margin-top:1px;">Resumen del día · 11 mayo 2026</p>
+        </div>
+      </div>
+      <button onclick="closeResueltos()" style="border:none;background:none;cursor:pointer;padding:6px;border-radius:8px;" onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='none'">
+        <i class="fa-solid fa-xmark" style="color:#6B6F93;font-size:17px;"></i>
+      </button>
+    </div>
+
+    <!-- Metrics 2x2 grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+      <div class="res-metric">
+        <span class="font-lato" style="font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:0.3px;text-transform:uppercase;">Resueltos hoy</span>
+        <span class="font-inter" style="font-size:32px;font-weight:700;color:#101828;letter-spacing:-1px;line-height:1.1;">47</span>
+        <span class="font-lato" style="font-size:12px;color:#16A34A;font-weight:600;">↑ 12% vs ayer</span>
+      </div>
+      <div class="res-metric">
+        <span class="font-lato" style="font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:0.3px;text-transform:uppercase;">Esta semana</span>
+        <span class="font-inter" style="font-size:32px;font-weight:700;color:#101828;letter-spacing:-1px;line-height:1.1;">312</span>
+        <span class="font-lato" style="font-size:12px;color:#9CA3AF;font-weight:600;">lun — hoy</span>
+      </div>
+      <div class="res-metric">
+        <span class="font-lato" style="font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:0.3px;text-transform:uppercase;">Tiempo promedio</span>
+        <span class="font-inter" style="font-size:32px;font-weight:700;color:#101828;letter-spacing:-1px;line-height:1.1;">3:24</span>
+        <span class="font-lato" style="font-size:12px;color:#9CA3AF;font-weight:600;">minutos por ticket</span>
+      </div>
+      <div class="res-metric">
+        <span class="font-lato" style="font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:0.3px;text-transform:uppercase;">Satisfacción</span>
+        <span class="font-inter" style="font-size:32px;font-weight:700;color:#16A34A;letter-spacing:-1px;line-height:1.1;">98%</span>
+        <span class="font-lato" style="font-size:12px;color:#9CA3AF;font-weight:600;">basado en 38 resp.</span>
+      </div>
+    </div>
+
+    <!-- Ver todo CTA -->
+    <button onclick="closeResueltos();openResueltosList()"
+      style="width:100%;height:44px;background:#1A66FC;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.15s,box-shadow 0.15s;box-shadow:0 2px 8px rgba(26,102,252,0.25);"
+      onmouseenter="this.style.background='#0347CE';this.style.boxShadow='0 4px 14px rgba(26,102,252,0.35)'" onmouseleave="this.style.background='#1A66FC';this.style.boxShadow='0 2px 8px rgba(26,102,252,0.25)'">
+      <span class="font-inter" style="font-size:14px;font-weight:600;color:white;letter-spacing:-0.1px;">Ver todas las conversaciones resueltas</span>
+      <i class="fa-solid fa-arrow-right" style="color:rgba(255,255,255,0.8);font-size:12px;"></i>
+    </button>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     RESUELTOS LIST OVERLAY
+══════════════════════════════════════════════════ -->
+<div id="resueltosListOverlay" class="screen-overlay">
+
+  <!-- Header -->
+  <div style="flex-shrink:0;height:71px;background:white;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <button onclick="document.getElementById('resueltosListOverlay').style.display='none'" style="display:flex;align-items:center;gap:6px;border:none;background:none;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background 0.12s;" onmouseenter="this.style.background='#F4F5FA'" onmouseleave="this.style.background='none'">
+        <i class="fa-solid fa-chevron-left" style="color:#6B6F93;font-size:12px;"></i>
+        <span class="font-lato" style="font-size:13px;color:#6B6F93;font-weight:600;">Recepción</span>
+      </button>
+      <div style="width:1px;height:24px;background:#E0E1E9;"></div>
+      <h1 class="font-inter" style="font-size:17px;font-weight:600;color:#101828;letter-spacing:-0.3px;">Resueltos</h1>
+      <span style="background:#F0FDF4;color:#15803D;font-size:12px;font-weight:700;padding:3px 10px;border-radius:9999px;border:1px solid #BBF7D0;">47 hoy</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button class="filt-chip active" style="padding:5px 13px;border-radius:20px;border:1px solid #1A66FC;background:#EEF4FF;color:#1A66FC;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Hoy</button>
+      <button class="filt-chip" style="padding:5px 13px;border-radius:20px;border:1px solid #E0E1E9;background:white;color:#6B6F93;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Esta semana</button>
+      <button class="filt-chip" style="padding:5px 13px;border-radius:20px;border:1px solid #E0E1E9;background:white;color:#6B6F93;font-family:'Lato',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Este mes</button>
+    </div>
+    <div style="width:120px;"></div>
+  </div>
+
+  <!-- Content -->
+  <div style="flex:1;overflow-y:auto;padding:24px 32px;">
+    <div style="background:white;border:1px solid #E0E1E9;border-radius:12px;overflow:hidden;">
+      <table class="conv-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>#</th>
+            <th>Asunto</th>
+            <th>Paciente</th>
+            <th>Canal</th>
+            <th>Resuelto</th>
+            <th>Agente</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#16A34A;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2839</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Problemas para acceder a resultados de análisis</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 18m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#FFF3E0;color:#C2410C;">Alta</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F5E9;color:#1B5E20;">Resuelto</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#6366F1;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">LA</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">Luciano Alberti</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">WhatsApp</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">19:06 hs</span></td>
+            <td><div style="display:flex;align-items:center;gap:7px;"><div style="width:24px;height:24px;border-radius:50%;background:#1A66FC;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:9px;font-weight:700;color:white;">DG</span></div><span class="font-inter" style="font-size:13px;color:#40435B;">Dr. García</span></div></td>
+          </tr>
+          <tr>
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#16A34A;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2835</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Renovar receta de Metformina y control glucemia</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 42m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#F0F2F8;color:#40435B;">Normal</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F5E9;color:#1B5E20;">Resuelto</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#F97316;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">PV</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">Patricia Vega</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">WhatsApp</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">18:42 hs</span></td>
+            <td><div style="display:flex;align-items:center;gap:7px;"><div style="width:24px;height:24px;border-radius:50%;background:#1A66FC;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:9px;font-weight:700;color:white;">DG</span></div><span class="font-inter" style="font-size:13px;color:#40435B;">Dr. García</span></div></td>
+          </tr>
+          <tr>
+            <td><span style="width:8px;height:8px;border-radius:50%;background:#16A34A;display:block;"></span></td>
+            <td><span class="font-inter" style="font-size:12px;color:#ACAEC4;">#2830</span></td>
+            <td>
+              <p class="font-inter" style="font-size:13px;font-weight:500;color:#101828;">Turno con nefróloga — programa renal</p>
+              <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
+                <span class="font-lato" style="font-size:11px;color:#9CA3AF;">hace 1h 15m</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#F0F2F8;color:#40435B;">Normal</span>
+                <span class="font-lato" style="font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9999px;background:#E8F5E9;color:#1B5E20;">Resuelto</span>
+              </div>
+            </td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:#8B5CF6;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:10px;font-weight:700;color:white;">HS</span></div><span class="font-inter" style="font-size:13px;color:#2D3142;">Hugo Salinas</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-globe" style="color:#9CA3AF;font-size:12px;"></i><span class="font-lato" style="font-size:12px;color:#6B6F93;">Web</span></div></td>
+            <td><span class="font-inter" style="font-size:13px;color:#6B6F93;">18:09 hs</span></td>
+            <td><div style="display:flex;align-items:center;gap:7px;"><div style="width:24px;height:24px;border-radius:50%;background:#16A34A;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="font-lato" style="font-size:9px;font-weight:700;color:white;">ER</span></div><span class="font-inter" style="font-size:13px;color:#40435B;">Dra. Romero</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ── TOAST ── -->
+<div id="toast" class="toast"></div>
+
+<!-- ── MODAL ── -->
+<div id="modalOverlay" class="modal-overlay" onclick="closeModalOverlay(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h2 id="modalTitle" class="font-lato" style="font-weight:700;font-size:18px;color:#40435B;"></h2>
+      <button onclick="closeModal()" style="border:none;background:none;cursor:pointer;padding:4px;">
+        <i class="fa-solid fa-xmark" style="color:#6B6F93;font-size:18px;"></i>
+      </button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     SCRIPT
+══════════════════════════════════════════════════ -->
+<script>
+
+// ── Mock Data ──────────────────────────────────────
+
+const DB = [
+  {
+    id: 1,
+    listName: 'María González',
+    contactName: 'Luciano Alberti',
+    contactPhone: '+54 9 3764 6710204',
+    time: 'hace 2m',
+    preview: 'Tengo problemas para acceder a mis resultados de análisis',
+    unread: 2,
+    status: 'Abierto',
+    priority: 'Alta',
+    subject: 'Problemas para acceder a resultados de análisis de sangre de la semana pasada',
+    pastCount: 2,
+    patient: { name:'Luis Alberto Aballay', age:'66 años', doc:'13165678', phone:'+5491164793521', email:'fcastelli@sg.com.ar' },
+    meds: [
+      { name:'IBU 400',               drug:'Ibuprofeno', dose:'10', presentation:'400mg comp x 20' },
+      { name:'ALLOPURINOL CRAVERI RETARD', drug:'Allopurinol', dose:'-',  presentation:'300 mg comp.lib.prol.x20' },
+    ],
+    messages: [
+      { id:1, sent:false, text:'Hola doctor, le mando una foto de los resultados que me dieron hoy.', time:'18:20 horas', date:'17 de octubre de 2025',
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:2, type:'image', sent:false, imageUrl:'https://placehold.co/260x180/E0E7FF/3B5BDB?text=📋+Resultados+Lab', caption:'Análisis de sangre - 17/10/2025', time:'18:20 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:3, sent:true, status:2, text:'Gracias Luis, lo reviso ahora. También le mando el informe del turno anterior para que lo tenga.', time:'18:35 horas', date:null,
+        sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+      { id:4, type:'file', sent:true, status:2, fileName:'Informe_consulta_sep2025.pdf', fileExt:'pdf', fileSize:'284 KB', time:'18:35 horas', date:null,
+        sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+      { id:5, sent:false, text:'Perfecto, ya lo descargué. Escuche este mensaje que le mandé antes para explicarle mejor.', time:'18:41 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:6, type:'audio', sent:false, duration:'0:18', time:'18:41 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:7, sent:true, status:1, text:'Entiendo la situación. Revisé sus análisis y los valores de creatinina están un poco elevados. Le hice la receta de IBU 400, puede verla en el portal bajo "Recetas".', time:'18:50 horas', date:null,
+        sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+      { id:8, type:'image', sent:true, status:1, imageUrl:'https://placehold.co/260x160/EEF2FF/4F46E5?text=🧪+Valores+de+referencia', caption:'Tabla de valores normales de creatinina', time:'18:51 horas', date:null,
+        sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+      { id:9, sent:false, text:'Muchas gracias doctor! Qué alivio.', time:'19:02 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:10, type:'sticker', sent:false, sticker:'🙏', time:'19:02 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:11, type:'audio', sent:false, duration:'0:22', time:'19:04 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:12, sent:true, status:0, text:'Recuerde tomarlo con las comidas para evitar molestias estomacales. Cualquier consulta adicional puede escribirnos aquí.', time:'19:06 horas', date:null,
+        sender:{ type:'bot', icon:'fa-solid fa-robot', label:'IA Osana', bg:'#7C3AED' } },
+      { id:13, type:'file', sent:false, fileName:'Obra_social_autorizacion.docx', fileExt:'docx', fileSize:'58 KB', time:'19:15 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:14, sent:false, text:'Adjunto también la autorización de la obra social por si la necesita.', time:'19:15 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:15, sent:false, text:'Hola, me quede sin medicación y necesito una receta urgente y no me dan turno con Usted doctor que puedo hacer porfavor.', time:'19:30 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      { id:16, type:'bot-menu', sent:true, time:'19:30 horas', date:null,
+        sender:{ type:'bot', icon:'fa-solid fa-robot', label:'IA Osana', bg:'#7C3AED' },
+        menuText:'¿Qué necesitás hacer hoy?',
+        options:['💊 Renovar receta','📅 Sacar turno','📋 Ver resultados','❓ Otra consulta'] },
+      { id:17, type:'bot-choice', sent:false, time:'19:31 horas', date:null,
+        sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' },
+        choice:'💊 Renovar receta' },
+    ],
+    events: [
+      { type:'assignment', time:'18:00', text:'Conversación asignada a Dr. García' },
+      { type:'status',     time:'18:05', text:'Estado cambiado a: En curso', actor:'Dr. García' },
+      { type:'note',       time:'18:45', text:'Paciente consulta sobre creatinina elevada. Valores levemente fuera de rango pero sin urgencia. Monitorear en próximo control.', author:'Dr. García' },
+      { type:'n8n',        time:'19:06', text:'IA Osana respondió automáticamente al mensaje sobre medicación' },
+      { type:'template',   time:'19:06', text:'Mensaje automático: "Recuerde tomarlo con las comidas..."' },
+      { type:'status',     time:'19:30', text:'Estado cambiado a: Abierto', actor:'Sistema' },
+    ],
+    past: [
+      { date:'12 de octubre de 2025', subject:'Resultados de laboratorio no disponibles en el portal', msgs:[
+        { id:101, sent:false, text:'Buen día doctor, le escribo porque no encuentro mis resultados de laboratorio en el portal.', time:'10:15 horas',
+          sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+        { id:102, sent:true, text:'Hola Luis, buenos días. Los podés descargar desde la sección "Resultados" del portal. ¿Ya tiene su usuario?', time:'10:18 horas',
+          sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+        { id:103, sent:false, text:'Sí, tengo usuario pero cuando entro a Resultados me dice que no hay archivos disponibles.', time:'10:22 horas',
+          sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+        { id:104, sent:true, text:'Entiendo, puede ser un tema de sincronización. El laboratorio demora hasta 48 hs hábiles en cargar los resultados. Los análisis son de hoy?', time:'10:25 horas',
+          sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+        { id:105, sent:false, text:'Son de ayer a la tarde, 11 de octubre.', time:'10:27 horas',
+          sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+        { id:106, sent:true, text:'Perfecto, entonces mañana a primera hora deberían aparecer. Si para el jueves a la mañana no están disponibles, escríbanos nuevamente y lo gestionamos directamente con el laboratorio.', time:'10:29 horas',
+          sender:{ type:'bot', icon:'fa-solid fa-robot', label:'IA Osana', bg:'#7C3AED' } },
+        { id:107, sent:false, text:'Muchas gracias, lo reviso mañana entonces.', time:'10:31 horas',
+          sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      ]},
+      { date:'5 de septiembre de 2025', subject:'Renovación de recetas IBU 400 y Allopurinol', msgs:[
+        { id:201, sent:false, text:'Doctor, necesito renovar mi receta de IBU 400 y de Allopurinol. Me queda para 4 días nada más.', time:'09:00 horas',
+          sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+        { id:202, sent:true, text:'Buenos días Luis. Revisé su historial, está al día con los controles. Le emito las dos recetas ahora mismo.', time:'09:04 horas',
+          sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+        { id:203, type:'file', sent:true, fileName:'Receta_IBU400_sep2025.pdf', fileExt:'pdf', fileSize:'112 KB', time:'09:05 horas',
+          sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+        { id:204, type:'file', sent:true, fileName:'Receta_Allopurinol_sep2025.pdf', fileExt:'pdf', fileSize:'98 KB', time:'09:05 horas',
+          sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+        { id:205, sent:false, text:'Perfecto, las recibí. Una pregunta, el IBU 400 lo puedo tomar con el estómago vacío?', time:'09:10 horas',
+          sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+        { id:206, sent:true, text:'No, el ibuprofeno siempre debe tomarse con alimentos o leche para proteger la mucosa gástrica. Nunca en ayunas.', time:'09:13 horas',
+          sender:{ type:'bot', icon:'fa-solid fa-robot', label:'IA Osana', bg:'#7C3AED' } },
+        { id:207, sent:false, text:'Entendido, gracias por la aclaración!', time:'09:14 horas',
+          sender:{ type:'patient', initials:'LA', label:'Luis Aballay', bg:'#9CA3AF' } },
+      ]},
+    ],
+  },
+  {
+    id: 2,
+    listName: 'Sofía Rodríguez',
+    contactName: 'Sofía Rodríguez',
+    contactPhone: '+54 9 1122 334455',
+    time: 'hace 1h',
+    preview: '¿Puede ayudarme a programar una cita?',
+    unread: 1,
+    status: 'En curso',
+    priority: 'Normal',
+    subject: 'Solicitud de turno con especialista',
+    pastCount: 0,
+    patient: { name:'Sofía Rodríguez', age:'34 años', doc:'28774512', phone:'+54911223344', email:'sofia.rodriguez@osana.com' },
+    meds: [
+      { name:'LOSARTÁN 50MG', drug:'Losartán', dose:'50mg', presentation:'50mg comp x 30' },
+    ],
+    messages: [
+      { id:1, sent:false, text:'¿Puede ayudarme a programar una cita con un cardiólogo?', time:'14:20 horas', date:'17 de octubre de 2025',
+        sender:{ type:'patient', initials:'SR', label:'Sofía Rodríguez', bg:'#9CA3AF' } },
+      { id:2, sent:true, status:1, text:'Buenos días Sofía, con gusto te ayudo. ¿Tenés alguna preferencia de día o turno?', time:'14:22 horas', date:null,
+        sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+      { id:3, sent:false, text:'Me vendría bien la semana que viene, cualquier día por la mañana.', time:'14:25 horas', date:null,
+        sender:{ type:'patient', initials:'SR', label:'Sofía Rodríguez', bg:'#9CA3AF' } },
+    ],
+    past: [],
+  },
+  {
+    id: 3,
+    listName: 'Laura Martínez',
+    contactName: 'Laura Martínez',
+    contactPhone: '+54 9 2233 445566',
+    time: 'hace 3h',
+    preview: '¿Está disponible la Dra. Romero esta semana?',
+    unread: 0,
+    status: 'Abierto',
+    priority: 'Baja',
+    windowExpired: false,
+    subject: 'Consulta sobre disponibilidad de médico',
+    pastCount: 1,
+    patient: { name:'Laura Martínez', age:'45 años', doc:'22156789', phone:'+54922334455', email:'laura.martinez@gmail.com' },
+    meds: [],
+    messages: [
+      { id:1, sent:false, text:'¿Está disponible la Dra. Romero esta semana para una consulta?', time:'11:00 horas', date:'17 de octubre de 2025',
+        sender:{ type:'patient', initials:'LM', label:'Laura Martínez', bg:'#9CA3AF' } },
+      { id:2, sent:true, status:3, text:'Hola Laura, déjame verificar la agenda de la Dra. Romero.', time:'11:05 horas', date:null,
+        sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+      { id:3, sent:true, status:4, text:'La Dra. Romero tiene disponibilidad el jueves 20 a las 10:00 y el viernes 21 a las 15:30. ¿Te conviene alguno?', time:'11:07 horas', date:null,
+        sender:{ type:'bot', icon:'fa-solid fa-robot', label:'IA Osana', bg:'#7C3AED' } },
+    ],
+    past: [
+      { date:'1 de agosto de 2025', msgs:[
+        { id:10, sent:false, text:'Quería hacer un seguimiento de mi consulta anterior.', time:'15:00 horas',
+          sender:{ type:'patient', initials:'LM', label:'Laura Martínez', bg:'#9CA3AF' } },
+        { id:11, sent:true,  text:'Claro Laura, ¿cómo te sentís desde la última visita?', time:'15:03 horas',
+          sender:{ type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' } },
+      ]},
+    ],
+  },
+  {
+    id: 4,
+    listName: 'Marcos Villalba',
+    contactName: 'Marcos Villalba',
+    contactPhone: '+54 9 1144 556677',
+    time: 'hace 2d',
+    preview: 'Gracias, hasta la próxima',
+    unread: 0,
+    status: 'Abierto',
+    priority: 'Normal',
+    subject: 'Seguimiento post-consulta de nefrología',
+    pastCount: 1,
+    windowExpired: true,
+    patient: { name:'Marcos Villalba', age:'58 años', doc:'18443210', phone:'+5491144556677', email:'m.villalba@hotmail.com' },
+    meds: [
+      { name:'LOSARTÁN 50 MG', drug:'Losartán potásico', dose:'50', presentation:'comp x 30' },
+    ],
+    messages: [],
+    past: [
+      { date:'9 de mayo de 2026', subject:'Consulta sobre interacción del Losartán con nueva medicación', msgs:[
+        { id:1, sent:false, text:'Buenas tardes, quería confirmar si puedo seguir tomando el Losartán con la nueva medicación.', time:'14:20 horas',
+          sender:{ type:'patient', initials:'MV', label:'Marcos Villalba', bg:'#9CA3AF' } },
+        { id:2, sent:true, text:'Hola Marcos, sí, podés continuar con el Losartán sin problema. Te recomiendo tomarlo siempre a la misma hora.', time:'14:35 horas',
+          sender:{ type:'agent', initials:'ER', label:'Dra. Romero', bg:'#16A34A' } },
+        { id:3, sent:false, text:'Perfecto, muchas gracias. Hasta la próxima.', time:'14:37 horas',
+          sender:{ type:'patient', initials:'MV', label:'Marcos Villalba', bg:'#9CA3AF' } },
+      ]},
+    ],
+  },
+];
+
+// ── State ──────────────────────────────────────────
+
+let activeId        = 1;
+let chatTab         = 'active';  // 'active' | 'past'
+let ptabIndex       = 0;
+let panelOpen       = false;
+let currentPastGroup = null;  // the past-group object currently visible when scrolled into history
+
+// ── Boot ──────────────────────────────────────────
+
+function init() {
+  renderList();
+  loadConv(activeId);
+  initResizers();
+  initScrollListener();
+}
+
+// ── Panel resize ──────────────────────────────────
+
+const LEFT_MIN = 180, LEFT_MAX = 380;
+const RIGHT_MIN = 240, RIGHT_MAX = 520, RIGHT_COLLAPSE_AT = 180, RIGHT_DEFAULT = 367;
+let rightCollapsed = false;
+let savedRightW    = 367;
+
+function initResizers() {
+  makeResizer(
+    document.getElementById('resizerLeft'),
+    document.getElementById('chatListPanel'),
+    'right', LEFT_MIN, LEFT_MAX, null
+  );
+  makeResizer(
+    document.getElementById('resizerRight'),
+    document.getElementById('patientPanel'),
+    'left', RIGHT_MIN, RIGHT_MAX, RIGHT_COLLAPSE_AT
+  );
+}
+
+function makeResizer(handle, panel, growDir, min, max, collapseAt) {
+  const defaultW = panel.offsetWidth; // capture initial width as default
+  handle.addEventListener('dblclick', e => {
+    e.preventDefault();
+    if (panel.classList.contains('collapsed')) { expandRightPanel(defaultW); return; }
+    panel.style.transition = '';
+    panel.style.width = defaultW + 'px';
+    if (panel.id === 'patientPanel') { savedRightW = defaultW; rightCollapsed = false; }
+  });
+  handle.addEventListener('mousedown', e => {
+    if (panel.classList.contains('collapsed')) {
+      expandRightPanel();
+      return;
+    }
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = panel.offsetWidth;
+    handle.classList.add('resizing');
+    panel.style.transition = 'none';
+    document.body.style.cursor    = 'ew-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const delta = growDir === 'right' ? e.clientX - startX : startX - e.clientX;
+      const newW  = startW + delta;
+      if (collapseAt && newW < collapseAt) {
+        if (!rightCollapsed) collapseRightPanel();
+      } else {
+        if (rightCollapsed) expandRightPanel(Math.max(min, Math.min(max, newW)));
+        else {
+          const w = Math.max(min, Math.min(max, newW));
+          panel.style.width = w + 'px';
+          if (panel.id === 'patientPanel') savedRightW = w;
+        }
+      }
+    }
+    function onUp() {
+      handle.classList.remove('resizing');
+      panel.style.transition = '';
+      document.body.style.cursor     = '';
+      document.body.style.userSelect  = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
+}
+
+function collapseRightPanel() {
+  if (rightCollapsed) return;
+  rightCollapsed = true;
+  const p = document.getElementById('patientPanel');
+  savedRightW = p.offsetWidth;
+  p.style.width = '44px';
+  p.classList.add('collapsed');
+}
+
+function expandRightPanel(width) {
+  rightCollapsed = false;
+  const p = document.getElementById('patientPanel');
+  p.classList.remove('collapsed');
+  const w = width || RIGHT_DEFAULT;
+  p.style.width = w + 'px';
+  savedRightW = w;
+}
+
+// ── Filters ───────────────────────────────────────
+
+let activeFilters = { status: [], queue: [], channel: [] };
+let filterOpen = false;
+
+function toggleFilterPanel() {
+  filterOpen = !filterOpen;
+  const panel = document.getElementById('filterPanel');
+  const btn   = document.getElementById('filterBtn');
+  panel.style.display = filterOpen ? 'block' : 'none';
+  btn.style.borderColor = filterOpen ? '#1A66FC' : (hasActiveFilters() ? '#1A66FC' : '#E0E1E9');
+  btn.style.background  = filterOpen ? '#EEF4FF' : (hasActiveFilters() ? '#EEF4FF' : 'white');
+}
+
+function hasActiveFilters() {
+  return activeFilters.status.length > 0 || activeFilters.queue.length > 0 || activeFilters.channel.length > 0;
+}
+
+function toggleFilter(type, value) {
+  const arr = activeFilters[type];
+  const idx = arr.indexOf(value);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push(value);
+  const chipId = `filt-${type}-${value.replace(/\s/g,'_')}`;
+  const chip = document.getElementById(chipId);
+  if (chip) chip.classList.toggle('active', arr.includes(value));
+  const has = hasActiveFilters();
+  document.getElementById('filterDot').style.display = has ? 'block' : 'none';
+  const btn = document.getElementById('filterBtn');
+  btn.style.borderColor = has || filterOpen ? '#1A66FC' : '#E0E1E9';
+  btn.style.background  = has || filterOpen ? '#EEF4FF' : 'white';
+  renderList();
+}
+
+function clearAllFilters() {
+  activeFilters = { status: [], queue: [], channel: [] };
+  document.querySelectorAll('.filt-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('filterDot').style.display = 'none';
+  document.getElementById('filterBtn').style.borderColor = filterOpen ? '#1A66FC' : '#E0E1E9';
+  document.getElementById('filterBtn').style.background  = filterOpen ? '#EEF4FF' : 'white';
+  renderList();
+}
+
+// ── Conversation list ──────────────────────────────
+
+function renderList() {
+  const search    = document.getElementById('searchInput').value.toLowerCase();
+  const unreadOnly = document.getElementById('unreadToggle').checked;
+
+  const filtered = DB.filter(c => {
+    if (unreadOnly && c.unread === 0) return false;
+    if (search && !c.listName.toLowerCase().includes(search)) return false;
+    if (activeFilters.status.length > 0 && !activeFilters.status.includes(c.status)) return false;
+    // MVP quick filters
+    if (demoMode === 'mvp' && mvpFilters && mvpFilters.priority && c.priority !== mvpFilters.priority) return false;
+    return true;
+  });
+
+  document.getElementById('convCountLabel').textContent =
+    `${filtered.length} conversación${filtered.length !== 1 ? 'es' : ''} activa${filtered.length !== 1 ? 's' : ''}`;
+
+  const avPalette = ['#1A66FC','#7C3AED','#059669','#D97706','#0891B2','#DC2626'];
+  document.getElementById('convList').innerHTML = filtered.map((c, i) => {
+    const isActive  = c.id === activeId;
+    const avColor   = avPalette[i % avPalette.length];
+    const initials  = c.listName.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const badge     = c.unread > 0
+      ? `<span style="flex-shrink:0;min-width:18px;height:18px;background:#1A66FC;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;padding:0 5px;font-family:'Lato',sans-serif;">${c.unread}</span>`
+      : '';
+    return `
+    <div class="conv-item ${isActive ? 'is-active' : ''}"
+         style="border-bottom:1px solid #ECEDF3;"
+         onclick="loadConv(${c.id})">
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 14px 11px ${isActive?'11px':'13px'};">
+        <div style="width:36px;height:36px;border-radius:50%;background:${avColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0.88;">
+          <span style="font-family:'Lato',sans-serif;font-weight:700;font-size:12px;color:white;letter-spacing:0.3px;">${initials}</span>
+        </div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <span class="font-lato" style="font-weight:${isActive?'700':'500'};font-size:13.5px;color:${isActive?'#1A3A6B':'#40435B'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.listName)}</span>
+            <span class="font-lato" style="font-size:11px;color:${c.unread>0?'#1A66FC':'#ACAEC4'};white-space:nowrap;flex-shrink:0;font-weight:${c.unread>0?'600':'400'};">${c.time}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="font-lato" style="flex:1;font-size:12px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.preview)}</span>
+            ${badge}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterConversations() { renderList(); }
+
+
+
+// ── Load conversation ──────────────────────────────
+
+function loadConv(id) {
+  const c = DB.find(x => x.id === id);
+  if (!c) return;
+
+  c.unread = 0;
+  activeId = id;
+
+  // Header
+  document.getElementById('contactName').textContent  = c.contactName;
+  document.getElementById('contactPhone').textContent = c.contactPhone;
+  document.getElementById('pastTabLabel').textContent = 'Conversaciones Pasadas';
+  const badge = document.getElementById('pastCountBadge');
+  if (c.pastCount > 0) {
+    badge.textContent = c.pastCount;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Subject / status / priority
+  document.getElementById('subjectText').textContent = c.subject;
+  applyStatusBadge(c.status);
+  applyPriorityBadge(c.priority || 'Normal');
+
+  // Patient panel
+  const p = c.patient;
+  document.getElementById('pName').textContent  = p.name;
+  document.getElementById('pAge').textContent   = p.age;
+  document.getElementById('pDoc').textContent   = p.doc;
+  document.getElementById('pPhone').textContent = p.phone;
+  document.getElementById('pEmail').textContent = p.email;
+
+  // Medications
+  renderMeds(c.meds);
+
+  // Messages
+  renderMessages(c);
+  setWindowExpiredState(!!c.windowExpired);
+  switchChatTab('active');
+
+  renderList();
+  setTimeout(scrollBottom, 60);
+}
+
+// ── Messages ───────────────────────────────────────
+
+function convDivider(label, type) {
+  if (type === 'past') {
+    return `<div class="past-date-divider" data-date="${label}" style="display:flex;align-items:center;gap:10px;margin:20px 0 12px;padding:4px 0;">
+      <div class="divider-line" style="flex:1;height:1.5px;background:#B0B4D0;"></div>
+      <span class="divider-pill font-lato" style="font-size:11px;color:#fff;font-weight:700;white-space:nowrap;letter-spacing:0.4px;background:#7C82A8;padding:3px 12px;border-radius:9999px;box-shadow:0 1px 4px rgba(100,110,180,0.25);">${label}</span>
+      <div class="divider-line" style="flex:1;height:1.5px;background:#B0B4D0;"></div>
+    </div>`;
+  }
+  return `<div style="display:flex;align-items:center;gap:10px;margin:20px 0 12px;">
+    <div style="flex:1;height:1.5px;background:#9EA3C0;"></div>
+    <span class="font-lato" style="font-size:11px;color:#5A5F80;font-weight:700;white-space:nowrap;letter-spacing:0.6px;text-transform:uppercase;">${label}</span>
+    <div style="flex:1;height:1.5px;background:#9EA3C0;"></div>
+  </div>`;
+}
+
+function renderMessages(c) {
+  const container = document.getElementById('chatContent');
+  let html = '';
+
+  // All past conversations in one full-bleed wrapper (negative margins eat chatContent padding)
+  if (c.past && c.past.length > 0) {
+    html += `<div id="pastWrapper" style="margin:-20px -32px 0;padding:0 32px 0;">`;
+    c.past.forEach(group => {
+      // Each group is its own block — sticky divider is constrained to this group's height
+      html += `<div class="past-group" style="padding-bottom:12px;">`;
+      html += convDivider(group.date, 'past');
+      html += buildMsgList(group.msgs, false, true);
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Single clean transition divider — no redundant "FIN" + "INICIO"
+  html += `<div id="currentConvStart">` + convDivider('Conversación actual') + `</div>`;
+  html += buildMsgList(c.messages, true);
+
+  // Audit events injected after messages (audit mode only)
+  if (viewMode === 'audit' && c.events && c.events.length > 0) {
+    html += buildAuditEvents(c.events);
+  }
+
+  // Window-expired notice at end of chat (when no active session)
+  if (c.windowExpired) {
+    html += `<div style="display:flex;justify-content:center;margin:20px 0 8px;">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:white;border:1px solid #E0E1E9;border-radius:9999px;padding:5px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <i class="fa-regular fa-clock" style="color:#ACAEC4;font-size:11px;"></i>
+        <span class="font-lato" style="font-size:11.5px;color:#9CA3AF;font-weight:600;letter-spacing:0.1px;">Ventana de 24 hs cerrada · hace 2d</span>
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function buildMsgList(msgs, showDate, isPast) {
+  let html = '';
+  let lastDate = null;
+  let lastSenderId = null;
+  msgs.forEach((m, i) => {
+    if (showDate && m.date && m.date !== lastDate) {
+      html += dateSep(m.date);
+      lastDate = m.date;
+      lastSenderId = null;
+    }
+    const sid = `${m.sent ? 1 : 0}::${m.sender ? m.sender.label : '?'}`;
+    const showHeader = sid !== lastSenderId;
+    lastSenderId = sid;
+
+    // Auto-compute effective status for sent messages
+    let effectiveM = m;
+    if (m.sent) {
+      let computed;
+      if (isPast) {
+        computed = 2; // all past sent msgs are READ
+      } else if (m.status !== undefined) {
+        computed = m.status; // explicit status always wins
+      } else {
+        // If anything (from any sender) comes after this msg → READ
+        const hasLaterMsg = i < msgs.length - 1;
+        computed = hasLaterMsg ? 2 : 1;
+      }
+      effectiveM = Object.assign({}, m, { _status: computed });
+    }
+    html += msgHtml(effectiveM, showHeader);
+  });
+  return html;
+}
+
+function dateSep(date) {
+  return `<div style="display:flex;justify-content:center;margin-bottom:16px;margin-top:4px;">
+    <span class="font-lato" style="background:#F8F8F8;color:#6B6F93;font-size:12px;padding:4px 12px;border-radius:9999px;">${esc(date)}</span>
+  </div>`;
+}
+
+function senderHeaderHtml(sender, isSent) {
+  const avatarInner = sender.icon
+    ? `<i class="${sender.icon}" style="color:white;font-size:8px;"></i>`
+    : `<span style="font-family:'Lato',sans-serif;font-weight:700;font-size:8px;color:white;">${esc(sender.initials)}</span>`;
+  const avatar = `<div style="width:20px;height:20px;border-radius:50%;background:${sender.bg};opacity:0.85;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${avatarInner}</div>`;
+  const name   = `<span class="font-lato" style="font-size:12px;color:#9CA3AF;font-weight:600;letter-spacing:0.1px;">${esc(sender.label)}</span>`;
+  const align  = isSent ? 'flex-end' : 'flex-start';
+  const inner  = isSent ? `${name}${avatar}` : `${avatar}${name}`;
+  return `<div style="display:flex;align-items:center;justify-content:${align};gap:6px;margin-top:16px;margin-bottom:5px;">${inner}</div>`;
+}
+
+// ── Message status ─────────────────────────────────
+
+function hexTint(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.round(255*(1-alpha)+r*alpha)},${Math.round(255*(1-alpha)+g*alpha)},${Math.round(255*(1-alpha)+b*alpha)})`;
+}
+
+function statusIcon(status) {
+  const s = (status === undefined || status === null) ? 1 : status;
+  if (s === 0) return `<i class="fa-solid fa-check" style="font-size:10px;opacity:0.8;color:#9CA3AF;"></i>`;
+  if (s === 1) return `<i class="fa-solid fa-check-double" style="font-size:10px;opacity:0.8;color:#9CA3AF;"></i>`;
+  if (s === 2) return `<i class="fa-solid fa-check-double" style="font-size:10px;opacity:0.9;color:#1DCCA3;"></i>`;
+  if (s === 3) return `<i class="fa-solid fa-circle-exclamation" style="font-size:10px;color:#EF4444;"></i>`;
+  if (s === 4) return `<i class="fa-regular fa-clock" style="font-size:10px;color:#9CA3AF;"></i>`;
+  return `<i class="fa-solid fa-check-double" style="font-size:10px;opacity:0.8;color:#9CA3AF;"></i>`;
+}
+
+const STATUS_HISTORY = {
+  3:  [ { status:0, datetime:'17/10/2025 · 18:35' },
+        { status:1, datetime:'17/10/2025 · 18:35', note:'Notificado con éxito' },
+        { status:2, datetime:'17/10/2025 · 18:41', note:'Notificado con éxito' } ],
+  4:  [ { status:0, datetime:'17/10/2025 · 18:35' },
+        { status:1, datetime:'17/10/2025 · 18:36', note:'Notificado con éxito' },
+        { status:2, datetime:'17/10/2025 · 18:41', note:'Notificado con éxito' } ],
+  7:  [ { status:0, datetime:'17/10/2025 · 18:50' },
+        { status:1, datetime:'17/10/2025 · 18:51', note:'Notificado con éxito' } ],
+  8:  [ { status:0, datetime:'17/10/2025 · 18:51' },
+        { status:1, datetime:'17/10/2025 · 18:51', note:'Notificado con éxito' } ],
+  12: [ { status:0, datetime:'17/10/2025 · 19:06' } ],
+};
+function getStatusHistory(id) { return STATUS_HISTORY[id] || null; }
+
+function showMsgAudit(msgId) {
+  const history = getStatusHistory(msgId);
+  if (!history) return;
+  const allMsgs = DB.flatMap(c => [...c.messages, ...(c.past||[]).flatMap(g=>g.msgs)]);
+  const msg = allMsgs.find(m => m.id === msgId);
+  const preview = msg ? (msg.text ? (msg.text.length > 70 ? msg.text.substring(0,70)+'…' : msg.text) : `[${msg.type||'mensaje'}]`) : '';
+  const SM = {
+    0: { label:'Enviado',     icon:'fa-solid fa-check',               color:'#9CA3AF', bg:'#F3F4F6' },
+    1: { label:'Entregado',   icon:'fa-solid fa-check-double',        color:'#9CA3AF', bg:'#F3F4F6' },
+    2: { label:'Leído',       icon:'fa-solid fa-check-double',        color:'#1DCCA3', bg:'#E6FBF5' },
+    3: { label:'Error',       icon:'fa-solid fa-circle-exclamation',  color:'#EF4444', bg:'#FEE2E2' },
+    4: { label:'Desconocido', icon:'fa-regular fa-clock',             color:'#9CA3AF', bg:'#F3F4F6' },
+  };
+  const steps = history.map((h, i) => {
+    const meta = SM[h.status] || SM[1];
+    const isLast = i === history.length - 1;
+    return `<div style="display:flex;gap:14px;padding-bottom:${isLast?'4px':'20px'};position:relative;">
+      ${!isLast ? `<div style="position:absolute;left:14px;top:30px;width:2px;height:calc(100% - 14px);background:#E5E7EB;border-radius:1px;"></div>` : ''}
+      <div style="width:28px;height:28px;border-radius:50%;background:${meta.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1;">
+        <i class="${meta.icon}" style="font-size:12px;color:${meta.color};"></i>
+      </div>
+      <div>
+        <p class="font-lato" style="font-weight:700;font-size:14px;color:#2D3142;margin-bottom:2px;">${meta.label}</p>
+        <p class="font-lato" style="font-size:12px;color:#6B6F93;">${h.datetime}</p>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('modalTitle').textContent = 'Cronología del mensaje';
+  document.getElementById('modalBody').innerHTML = `
+    ${preview ? `<div style="background:#F3F4F6;border-radius:8px;padding:10px 14px;margin-bottom:20px;border-left:3px solid #9CA3AF;">
+      <p class="font-lato" style="font-size:12.5px;color:#6B6F93;font-style:italic;line-height:1.4;">"${esc(preview)}"</p>
+    </div>` : ''}
+    <div style="padding:4px 0;">${steps}</div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function metaRow(m) {
+  const s     = m._status !== undefined ? m._status : (m.status !== undefined ? m.status : 1);
+  const sIco  = m.sent ? statusIcon(s) : '';
+  const color = m.sent ? '#5A82C8' : '#9CA3AF';
+  const extra = s === 3 ? `<span class="font-lato" style="font-size:10px;color:#EF4444;">· Error al enviar</span>` :
+                s === 4 ? `<span class="font-lato" style="font-size:10px;color:#9CA3AF;">· Procesando…</span>` : '';
+  const hasAudit = m.sent && !!getStatusHistory(m.id);
+  return `<div style="display:flex;align-items:center;justify-content:${m.sent?'flex-end':'flex-start'};gap:5px;margin-top:6px;${hasAudit?'cursor:pointer;':''}" ${hasAudit?`onclick="event.stopPropagation();showMsgAudit(${m.id})"`:''}>
+    ${sIco}<span class="font-lato" style="font-size:11px;color:${color};">${esc(m.time)}</span>${extra}
+  </div>`;
+}
+
+function audioBars(seed, sent) {
+  const heights = [6,10,14,8,18,12,20,10,16,8,14,18,10,12,16,8,20,14,10,18,12,8,16,10,14];
+  const color = sent ? '#7BAEF5' : '#ACAEC4';
+  return heights.map((h,i) => `<span class="msg-audio-bar" style="width:3px;height:${h}px;background:${i<10?'#1A66FC':color};"></span>`).join('');
+}
+
+function msgHtml(m, showHeader = true) {
+  const header = (showHeader && m.sender) ? senderHeaderHtml(m.sender, m.sent) : '';
+  const align  = m.sent ? 'flex-end' : 'flex-start';
+  const ml     = '';
+  const type   = m.type || 'text';
+
+  // ── sticker (no bubble) ──────────────────────────────────
+  if (type === 'sticker') {
+    return `${header}<div style="display:flex;justify-content:${align};margin-bottom:4px;">
+      <div style="${ml}text-align:${m.sent?'right':'left'};">
+        <span class="msg-sticker">${m.sticker}</span>
+        ${metaRow(m)}
+      </div>
+    </div>`;
+  }
+
+  // ── image ───────────────────────────────────────────────
+  if (type === 'image') {
+    const cls = m.sent ? 'msg-media-sent' : 'msg-media-recv';
+    const bg  = m.sent ? '#E8F0FE' : '#fff';
+    return `${header}<div style="display:flex;justify-content:${align};margin-bottom:4px;">
+      <div class="${cls}" style="max-width:260px;${ml}background:${bg};">
+        <img src="${m.imageUrl}" alt="imagen" style="display:block;width:100%;max-width:260px;border-radius:inherit;" loading="lazy" onerror="this.style.display='none'">
+        ${m.caption ? `<div style="padding:8px 12px 2px;"><p class="font-lato" style="font-size:13px;color:${m.sent?'#1A3A6B':'#2D3142'};line-height:18px;">${esc(m.caption)}</p></div>` : ''}
+        <div style="padding:${m.caption?'2px':'8px'} 12px 8px;">${metaRow(m)}</div>
+      </div>
+    </div>`;
+  }
+
+  // ── file ────────────────────────────────────────────────
+  if (type === 'file') {
+    const cls  = m.sent ? 'msg-media-sent' : 'msg-media-recv';
+    const bg   = m.sent ? '#E8F0FE' : '#fff';
+    const icBg = m.sent ? '#C7D9FA' : '#EEF0F6';
+    const extColor = { pdf:'#E53E3E', doc:'#3182CE', xls:'#38A169', txt:'#718096' };
+    const iconColor = extColor[m.fileExt] || '#6B6F93';
+    const faIcon    = m.fileExt==='pdf' ? 'fa-file-pdf' : m.fileExt==='xls'||m.fileExt==='xlsx' ? 'fa-file-excel' : m.fileExt==='doc'||m.fileExt==='docx' ? 'fa-file-word' : 'fa-file-lines';
+    return `${header}<div style="display:flex;justify-content:${align};margin-bottom:4px;">
+      <div class="${cls}" style="max-width:300px;${ml}background:${bg};">
+        <div class="msg-file-card">
+          <div style="width:40px;height:40px;border-radius:10px;background:${icBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid ${faIcon}" style="font-size:18px;color:${iconColor};"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p class="font-lato" style="font-size:13px;font-weight:700;color:${m.sent?'#1A3A6B':'#2D3142'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.fileName)}</p>
+            <p class="font-lato" style="font-size:11px;color:#9CA3AF;margin-top:2px;">${esc(m.fileExt.toUpperCase())} · ${esc(m.fileSize)}</p>
+          </div>
+          <button onclick="showToast('Descargando archivo...')" style="flex-shrink:0;background:none;border:none;cursor:pointer;padding:4px;">
+            <i class="fa-solid fa-download" style="font-size:14px;color:${m.sent?'#5A82C8':'#9CA3AF'};"></i>
+          </button>
+        </div>
+        <div style="padding:0 14px 8px;">${metaRow(m)}</div>
+      </div>
+    </div>`;
+  }
+
+  // ── audio ───────────────────────────────────────────────
+  if (type === 'audio') {
+    const cls = m.sent ? 'msg-media-sent' : 'msg-media-recv';
+    const bg  = m.sent ? '#E8F0FE' : '#fff';
+    const btnBg = m.sent ? '#C7D9FA' : '#EEF0F6';
+    return `${header}<div style="display:flex;justify-content:${align};margin-bottom:4px;">
+      <div class="${cls}" style="max-width:280px;${ml}background:${bg};padding:12px 14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button onclick="showToast('Reproduciendo audio...')" style="width:36px;height:36px;border-radius:50%;background:${btnBg};border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-play" style="font-size:12px;color:${m.sent?'#1A66FC':'#40435B'};margin-left:2px;"></i>
+          </button>
+          <div style="flex:1;display:flex;align-items:center;gap:2px;height:24px;">
+            ${audioBars(m.id, m.sent)}
+          </div>
+          <span class="font-lato" style="font-size:11px;color:${m.sent?'#5A82C8':'#9CA3AF'};flex-shrink:0;">${m.duration}</span>
+        </div>
+        ${metaRow(m)}
+      </div>
+    </div>`;
+  }
+
+  // ── bot-menu (chatbot offers options) ───────────────
+  if (type === 'bot-menu') {
+    const botBg = hexTint(m.sender ? m.sender.bg : '#7C3AED', 0.12);
+    const optBorder = m.sent ? '#DDD6FE' : '#DDD6FE';
+    const optColor  = m.sent ? '#5B21B6' : '#5B21B6';
+    const optionsHtml = (m.options || []).map(opt =>
+      `<div style="border:1.5px solid ${optBorder};border-radius:8px;padding:7px 12px;font-size:13px;color:${optColor};font-weight:600;cursor:default;background:white;font-family:'Lato',sans-serif;">${esc(opt)}</div>`
+    ).join('');
+    const cls = m.sent ? 'msg-sent' : 'msg-recv';
+    const textCol = m.sent ? '#1A3A6B' : '#2D3142';
+    return `${header}<div style="display:flex;justify-content:${align};margin-bottom:4px;">
+      <div class="${cls}" style="max-width:320px;padding:10px 14px;${ml}background:${botBg};">
+        <p class="font-lato" style="font-size:14px;line-height:20px;color:${textCol};margin-bottom:10px;">${esc(m.menuText)}</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">${optionsHtml}</div>
+        ${metaRow(m)}
+      </div>
+    </div>`;
+  }
+
+  // ── bot-choice (patient tapped a chatbot button) ─────
+  if (type === 'bot-choice') {
+    return `${header}<div style="display:flex;justify-content:flex-start;margin-bottom:4px;">
+      <div class="msg-recv" style="max-width:320px;padding:8px 14px;${ml}display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-hand-pointer" style="color:#9CA3AF;font-size:12px;flex-shrink:0;"></i>
+        <div>
+          <p class="font-lato" style="font-size:11px;color:#9CA3AF;margin-bottom:3px;">Seleccionó una opción</p>
+          <div style="display:inline-flex;align-items:center;background:#EDE9FE;border:1.5px solid #DDD6FE;border-radius:8px;padding:5px 12px;">
+            <span class="font-lato" style="font-size:13px;font-weight:700;color:#5B21B6;">${esc(m.choice)}</span>
+          </div>
+        </div>
+        ${metaRow(m)}
+      </div>
+    </div>`;
+  }
+
+  // ── text (default) ───────────────────────────────────────
+  const isBot     = m.sender && m.sender.type === 'bot';
+  const cls       = m.sent ? 'msg-sent' : 'msg-recv';
+  const textColor = m.sent ? '#1A3A6B' : '#2D3142';
+  const recvBg    = (!m.sent && isBot) ? `background:${hexTint(m.sender.bg, 0.12)};` : '';
+  return `${header}<div style="display:flex;justify-content:${align};margin-bottom:4px;">
+    <div class="${cls}" style="max-width:380px;padding:10px 14px;${ml}${recvBg}">
+      <p class="font-lato" style="font-size:14px;line-height:20px;color:${textColor};">${esc(m.text)}</p>
+      ${metaRow(m)}
+    </div>
+  </div>`;
+}
+
+// ── Audit events ────────────────────────────────────
+
+function buildAuditEvents(events) {
+  const icons = {
+    assignment: { ic:'fa-solid fa-user-check',       col:'#1A66FC', bg:'#EEF4FF' },
+    status:     { ic:'fa-solid fa-arrows-rotate',    col:'#7C3AED', bg:'#F5F3FF' },
+    note:       { ic:'fa-solid fa-note-sticky',      col:'#D97706', bg:'#FFFBEB' },
+    n8n:        { ic:'fa-solid fa-robot',            col:'#059669', bg:'#F0FDF4' },
+    template:   { ic:'fa-brands fa-whatsapp',        col:'#16A34A', bg:'#F0FDF4' },
+    turno:      { ic:'fa-regular fa-calendar-check', col:'#2563EB', bg:'#EFF6FF' },
+  };
+  let html = `<div style="margin:20px 0 8px;">`;
+  html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+    <div style="flex:1;height:1px;background:#E0E1E9;"></div>
+    <span class="font-lato" style="font-size:10.5px;color:#9CA3AF;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;white-space:nowrap;">AUDITORÍA</span>
+    <div style="flex:1;height:1px;background:#E0E1E9;"></div>
+  </div>`;
+  events.forEach(ev => {
+    const cfg = icons[ev.type] || icons.status;
+    const authorLine = ev.author ? `<span class="font-lato" style="font-size:11px;color:#9CA3AF;"> · ${esc(ev.author)}</span>` : '';
+    const isNote = ev.type === 'note';
+    html += `<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+      <div style="width:26px;height:26px;border-radius:8px;background:${cfg.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+        <i class="${cfg.ic}" style="font-size:11px;color:${cfg.col};"></i>
+      </div>
+      <div style="flex:1;${isNote ? `background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:8px 12px;` : 'padding:4px 0;'}">
+        <p class="font-lato" style="font-size:13px;color:#40435B;line-height:1.45;">${esc(ev.text)}${authorLine}</p>
+        <span class="font-lato" style="font-size:11px;color:#ACAEC4;">${esc(ev.time)} horas</span>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+// ── Send message ───────────────────────────────────
+
+function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  const c = DB.find(x => x.id === activeId);
+  if (!c) return;
+
+  const now  = new Date();
+  const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} horas`;
+  const sender = { type:'agent', initials:'DG', label:'Dr. García', bg:'#1A66FC' };
+  const msg    = { id: Date.now(), sent: true, text, time, date: null, sender };
+
+  // Show header only if previous message was from a different sender
+  const lastMsg    = c.messages[c.messages.length - 1];
+  const lastSid    = lastMsg ? `${lastMsg.sent?1:0}::${lastMsg.sender?.label||'?'}` : null;
+  const thisSid    = `1::${sender.label}`;
+  const showHeader = thisSid !== lastSid;
+
+  c.messages.push(msg);
+  c.preview = text;
+  c.time    = 'ahora';
+
+  const av  = document.getElementById('chatContent');
+  const div = document.createElement('div');
+  div.className = 'msg-new';
+  div.innerHTML = msgHtml(msg, showHeader);
+  av.appendChild(div);
+
+  input.value = '';
+  document.getElementById('sendBtn').style.opacity = '0.5';
+
+  renderList();
+  scrollBottom();
+}
+
+function onMsgInput(el) {
+  if (el.value === '/') { el.value = ''; openModal('acciones'); return; }
+  document.getElementById('sendBtn').style.opacity = el.value.trim() ? '1' : '0.5';
+}
+
+function onMsgKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function scrollBottom(smooth) {
+  const a = document.getElementById('messagesArea');
+  if (smooth) {
+    a.scrollTo({ top: a.scrollHeight, behavior: 'smooth' });
+  } else {
+    a.scrollTop = a.scrollHeight;
+  }
+}
+
+// ── Status ─────────────────────────────────────────
+
+function toggleStatusDd(e) {
+  e.stopPropagation();
+  document.getElementById('statusDd').classList.toggle('open');
+}
+
+function setStatus(s) {
+  const c = DB.find(x => x.id === activeId);
+  if (c) c.status = s;
+  applyStatusBadge(s);
+  document.getElementById('statusDd').classList.remove('open');
+  showToast(`Estado cambiado a: ${s}`);
+}
+
+function applyStatusBadge(s) {
+  const badge = document.getElementById('statusBadge');
+  const map = { 'Abierto':'#E8F0FF:#023BAC', 'En curso':'#FFF3E0:#E65100', 'Resuelto':'#E8F5E9:#1B5E20', 'Cerrado':'#F3F4F6:#6B7280' };
+  const [bg, col] = (map[s] || map['Abierto']).split(':');
+  badge.style.background = bg;
+  badge.style.color = col;
+  badge.innerHTML = `${esc(s)}<i class="fa-solid fa-chevron-down" style="font-size:8px;opacity:0.7;margin-left:5px;"></i>`;
+}
+
+document.addEventListener('click', () => {
+  document.getElementById('statusDd').classList.remove('open');
+  document.getElementById('priorityDd').classList.remove('open');
+});
+
+// ── Priority ───────────────────────────────────────
+
+function togglePriorityDd(e) {
+  e.stopPropagation();
+  document.getElementById('priorityDd').classList.toggle('open');
+}
+
+function setPriority(p) {
+  const c = DB.find(x => x.id === activeId);
+  if (c) c.priority = p;
+  applyPriorityBadge(p);
+  document.getElementById('priorityDd').classList.remove('open');
+  showToast(`Prioridad cambiada a: ${p}`);
+}
+
+function applyPriorityBadge(p) {
+  const badge = document.getElementById('priorityBadge');
+  const map = {
+    'Baja':    '#F3F4F6:#6B7280',
+    'Normal':  '#F0F2F8:#40435B',
+    'Alta':    '#FFF3E0:#C2410C',
+    'Urgente': '#FEF2F2:#DC2626',
+  };
+  const [bg, col] = (map[p] || map['Normal']).split(':');
+  badge.style.background = bg;
+  badge.style.color = col;
+  badge.innerHTML = `${esc(p)}<i class="fa-solid fa-chevron-down" style="font-size:8px;opacity:0.7;margin-left:5px;"></i>`;
+}
+
+// ── Subject edit ───────────────────────────────────
+
+function editSubject() {
+  // If scrolled into past history, open the contextual past-subject editor
+  if (currentPastGroup) {
+    openPastSubjectModal(currentPastGroup);
+    return;
+  }
+  // Normal active conversation: inline edit
+  const span  = document.getElementById('subjectText');
+  const input = document.getElementById('subjectInput');
+  const c = DB.find(x => x.id === activeId);
+  input.value = c ? c.subject : span.textContent.trim();
+  span.style.display  = 'none';
+  input.style.display = 'block';
+  input.focus();
+  input.select();
+}
+
+function saveSubject() {
+  const span  = document.getElementById('subjectText');
+  const input = document.getElementById('subjectInput');
+  const val   = input.value.trim();
+  if (val) {
+    const c = DB.find(x => x.id === activeId);
+    if (c) c.subject = val;
+    span.textContent = val;
+  }
+  input.style.display = 'none';
+  span.style.display  = '';
+}
+
+function cancelSubject() {
+  document.getElementById('subjectInput').style.display = 'none';
+  document.getElementById('subjectText').style.display  = '';
+}
+
+function openPastSubjectModal(group) {
+  const overlay = document.getElementById('pastSubjectOverlay');
+  document.getElementById('pastSubjectDate').textContent  = group.date;
+  document.getElementById('pastSubjectInput').value       = group.subject || '';
+  overlay.classList.add('open');
+  setTimeout(() => document.getElementById('pastSubjectInput').focus(), 80);
+}
+
+function savePastSubject() {
+  const overlay = document.getElementById('pastSubjectOverlay');
+  const val     = document.getElementById('pastSubjectInput').value.trim();
+  if (val && currentPastGroup) {
+    currentPastGroup.subject = val;
+    // Refresh the subject bar label
+    const subjectEl = document.getElementById('subjectText');
+    if (subjectEl && subjectEl.textContent.startsWith('Historial · ')) {
+      subjectEl.textContent = `Historial · ${val}`;
+    }
+    showToast('Asunto actualizado');
+  }
+  overlay.classList.remove('open');
+}
+
+function closePastSubjectModal() {
+  document.getElementById('pastSubjectOverlay').classList.remove('open');
+}
+
+// ── View mode (Chat / Auditoría) ───────────────────
+
+let viewMode = 'chat';
+
+function setViewMode(mode) {
+  viewMode = mode;
+  const chatBtn  = document.getElementById('viewModeChat');
+  const auditBtn = document.getElementById('viewModeAudit');
+  const BASE_ON  = 'height:28px;border-radius:8px;padding:0 10px;border:none;cursor:pointer;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.08);font-size:12.5px;font-weight:600;color:#2D3142;display:flex;align-items:center;gap:5px;white-space:nowrap;';
+  const BASE_OFF = 'height:28px;border-radius:8px;padding:0 10px;border:none;cursor:pointer;background:transparent;font-size:12.5px;font-weight:500;color:#6B6F93;display:flex;align-items:center;gap:5px;white-space:nowrap;';
+  if (mode === 'chat') {
+    chatBtn.style.cssText  = BASE_ON;
+    auditBtn.style.cssText = BASE_OFF;
+  } else {
+    auditBtn.style.cssText = BASE_ON;
+    chatBtn.style.cssText  = BASE_OFF;
+  }
+  const c = DB.find(x => x.id === activeId);
+  if (c) renderMessages(c);
+}
+
+// ── Chat tabs ──────────────────────────────────────
+
+function switchChatTab(tab) {
+  chatTab = tab;
+  const area   = document.getElementById('messagesArea');
+  const banner = document.getElementById('pastBanner');
+
+  if (tab === 'active') {
+    updateChatTabButtons('active');
+    banner.style.display = 'none';
+    scrollBottom(true);
+  } else {
+    // Scroll to the START of the most recent past group (group top aligns with area top)
+    const groups = area.querySelectorAll('.past-group');
+    const lastGroup = groups.length > 0 ? groups[groups.length - 1] : null;
+    if (lastGroup) {
+      const areaRect  = area.getBoundingClientRect();
+      const groupRect = lastGroup.getBoundingClientRect();
+      // Align group top to area top so the section divider is the first thing visible
+      const target = area.scrollTop + (groupRect.top - areaRect.top);
+      area.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    } else {
+      area.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    updateChatTabButtons('past');
+    if (document.getElementById('pastWrapper')) {
+      banner.style.display = 'flex';
+    }
+  }
+}
+
+function updateChatTabButtons(tab) {
+  const activeB = document.getElementById('tabActiveBtn');
+  const pastB   = document.getElementById('tabPastBtn');
+  const badge   = document.getElementById('pastCountBadge');
+  const BASE_INACTIVE = 'height:28px;border-radius:8px;padding:0 10px;border:none;cursor:pointer;background:transparent;font-size:13px;font-weight:500;color:#6B6F93;white-space:nowrap;display:flex;align-items:center;gap:6px;';
+  const BASE_ACTIVE   = 'height:28px;border-radius:8px;padding:0 10px;border:none;cursor:pointer;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.10);font-size:13px;font-weight:600;color:#2D3142;white-space:nowrap;display:flex;align-items:center;gap:6px;';
+  if (tab === 'active') {
+    activeB.style.cssText = BASE_ACTIVE;
+    pastB.style.cssText   = BASE_INACTIVE;
+    if (badge) badge.style.background = '#9CA3AF';
+  } else {
+    pastB.style.cssText   = BASE_ACTIVE;
+    activeB.style.cssText = BASE_INACTIVE + 'font-weight:500;';
+    if (badge) badge.style.background = '#1A66FC';
+  }
+}
+
+function setWindowExpiredState(expired) {
+  const tabActiveBtn = document.getElementById('tabActiveBtn');
+  const inputBanner  = document.getElementById('expiredInputBanner');
+  const normalMsg    = document.getElementById('normalMsgInput');
+  const qaRow        = document.getElementById('qaActionsRow');
+
+  if (expired) {
+    // Subtle tab: clock instead of green dot (still clickable)
+    tabActiveBtn.innerHTML = `<i class="fa-regular fa-clock" style="font-size:11px;color:#ACAEC4;flex-shrink:0;"></i><span style="color:#9CA3AF;">Chat Activo</span>`;
+    // Swap input row: hide real input, show locked banner
+    if (inputBanner) inputBanner.style.display = 'flex';
+    if (normalMsg)   normalMsg.style.display   = 'none';
+    // Gray out quick-action buttons
+    if (qaRow) { qaRow.style.opacity = '0.4'; qaRow.style.pointerEvents = 'none'; }
+  } else {
+    tabActiveBtn.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#1DCCA3;flex-shrink:0;"></span><span>Chat Activo</span>`;
+    if (inputBanner) inputBanner.style.display = 'none';
+    if (normalMsg)   normalMsg.style.display   = 'flex';
+    if (qaRow) { qaRow.style.opacity = ''; qaRow.style.pointerEvents = ''; }
+  }
+}
+
+function showTemplateModal() {
+  const templates = [
+    { name: 'Recordatorio de turno', text: 'Hola {{nombre}}, te recordamos que tenés turno el {{fecha}} a las {{hora}} en {{sucursal}}. Respondé SI para confirmar o NO para cancelar.' },
+    { name: 'Seguimiento post-consulta', text: 'Hola {{nombre}}, somos de PAMI. ¿Cómo te sentís después de tu consulta del {{fecha}}? Si tenés alguna duda o síntoma nuevo, estamos para ayudarte.' },
+    { name: 'Renovación de receta', text: 'Hola {{nombre}}, tu receta de {{medicamento}} está lista para retirar en {{sucursal}}. Podés pasar en cualquier horario de atención.' },
+  ];
+  const existing = document.getElementById('templateModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'templateModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(20,22,40,0.45);backdrop-filter:blur(3px);z-index:200;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:14px;width:460px;max-width:calc(100vw - 48px);box-shadow:0 8px 40px rgba(20,22,40,0.16);overflow:hidden;">
+      <!-- Header -->
+      <div style="padding:18px 20px 14px;border-bottom:1px solid #ECEDF3;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+        <div>
+          <p class="font-inter" style="font-size:14.5px;font-weight:700;color:#101828;margin:0;letter-spacing:-0.2px;">Iniciar con plantilla</p>
+          <p class="font-lato" style="font-size:12px;color:#9CA3AF;margin:3px 0 0;line-height:1.4;">Plantillas aprobadas por Meta · seleccioná una para enviar</p>
+        </div>
+        <button onclick="document.getElementById('templateModal').remove()" style="width:28px;height:28px;border-radius:7px;border:none;background:#F4F5FA;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+          <i class="fa-solid fa-xmark" style="color:#6B6F93;font-size:12px;"></i>
+        </button>
+      </div>
+      <!-- Template list -->
+      <div style="padding:14px 20px;display:flex;flex-direction:column;gap:8px;">
+        ${templates.map((t, i) => `
+          <div onclick="selectTemplate(${i})" id="tpl_${i}" style="border:1.5px solid #E8E9F0;border-radius:10px;padding:11px 14px;cursor:pointer;transition:border-color 0.12s,background 0.12s;">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+              <i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:13px;flex-shrink:0;"></i>
+              <span class="font-inter" style="font-size:13px;font-weight:600;color:#2D3142;letter-spacing:-0.1px;">${t.name}</span>
+            </div>
+            <p class="font-lato" style="font-size:12px;color:#6B6F93;line-height:1.55;margin:0;padding-left:20px;">${t.text}</p>
+          </div>
+        `).join('')}
+      </div>
+      <!-- Footer CTA -->
+      <div style="padding:0 20px 18px;">
+        <button id="sendTplBtn" onclick="sendTemplate()" style="width:100%;height:40px;background:#1A66FC;color:white;border:none;border-radius:10px;font-family:'Lato',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;opacity:0.35;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity 0.15s,background 0.15s;">
+          <i class="fa-brands fa-whatsapp" style="font-size:14px;"></i> Enviar plantilla
+        </button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+let selectedTemplateIdx = -1;
+function selectTemplate(idx) {
+  selectedTemplateIdx = idx;
+  document.querySelectorAll('[id^="tpl_"]').forEach((el, i) => {
+    el.style.borderColor = i === idx ? '#1A66FC' : '#ECEDF3';
+    el.style.background  = i === idx ? '#EEF4FF' : '';
+  });
+  const btn = document.getElementById('sendTplBtn');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = '';
+}
+
+function sendTemplate() {
+  const templates = [
+    { name: 'Recordatorio de turno', text: 'Hola {{nombre}}, te recordamos que tenés turno el {{fecha}} a las {{hora}} en {{sucursal}}. Respondé SI para confirmar o NO para cancelar.' },
+    { name: 'Seguimiento post-consulta', text: 'Hola {{nombre}}, somos de PAMI. ¿Cómo te sentís después de tu consulta del {{fecha}}? Si tenés alguna duda o síntoma nuevo, estamos para ayudarte.' },
+    { name: 'Renovación de receta', text: 'Hola {{nombre}}, tu receta de {{medicamento}} está lista para retirar en {{sucursal}}. Podés pasar en cualquier horario de atención.' },
+  ];
+  const tpl = templates[selectedTemplateIdx];
+  if (!tpl) return;
+  document.getElementById('templateModal').remove();
+
+  const c = DB.find(x => x.id === activeId);
+  if (!c) return;
+  c.windowExpired = false;
+  setWindowExpiredState(false);
+
+  const msg = { id: Date.now(), sent: true, status: 1, text: `[Plantilla: ${tpl.name}]\n${tpl.text}`, time: 'ahora', isTemplate: true };
+  c.messages.push(msg);
+  renderMessages(c);
+  scrollBottom(true);
+  showToast('Plantilla enviada correctamente');
+}
+
+function initScrollListener() {
+  const area   = document.getElementById('messagesArea');
+  const banner = document.getElementById('pastBanner');
+
+  const colorA = { r: 244, g: 245, b: 250 };
+  const colorB = { r: 221, g: 223, b: 240 };
+  function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+  function lerpColor(t) {
+    const e = easeInOut(Math.max(0, Math.min(1, t)));
+    const r = Math.round(colorA.r + (colorB.r - colorA.r) * e);
+    const g = Math.round(colorA.g + (colorB.g - colorA.g) * e);
+    const b = Math.round(colorA.b + (colorB.b - colorA.b) * e);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  area.addEventListener('scroll', () => {
+    const sentinel = document.getElementById('currentConvStart');
+
+    if (!sentinel) {
+      banner.style.display = 'none';
+      area.style.background = lerpColor(0);
+      updateChatTabButtons('active');
+      return;
+    }
+
+    const areaRect = area.getBoundingClientRect();
+    const sentRect = sentinel.getBoundingClientRect();
+    const inPast   = sentRect.top > areaRect.top + 20;
+
+    const ratio = inPast
+      ? Math.min(1, (sentRect.top - areaRect.top) / (areaRect.height * 0.55))
+      : 0;
+    const bg = lerpColor(ratio);
+    area.style.background = bg;
+
+    banner.style.display = inPast ? 'flex' : 'none';
+    updateChatTabButtons(inPast ? 'past' : 'active');
+
+    // Subject bar: show past-group subject when scrolled into history
+    const subjectEl = document.getElementById('subjectText');
+    if (subjectEl && subjectEl.style.display !== 'none') {
+      if (inPast) {
+        // Find which past-group is most visible in the viewport
+        let visibleGroupEl = null;
+        area.querySelectorAll('.past-group').forEach(g => {
+          const gr = g.getBoundingClientRect();
+          if (gr.top <= areaRect.bottom - 40) visibleGroupEl = g;
+        });
+        if (visibleGroupEl) {
+          const visibleDate = visibleGroupEl.querySelector('.past-date-divider')?.dataset?.date || null;
+          const conv = DB.find(x => x.id === activeId);
+          const pastGroup = conv?.past?.find(pg => pg.date === visibleDate);
+          currentPastGroup = pastGroup || null;
+          const pastSubject = pastGroup?.subject || visibleDate || 'Historial';
+          subjectEl.textContent = `Historial · ${pastSubject}`;
+          subjectEl.style.color = '#9CA3AF';
+          subjectEl.style.fontStyle = 'italic';
+          subjectEl.title = 'Clic para editar asunto de esta conversación';
+        }
+      } else {
+        currentPastGroup = null;
+        const c = DB.find(x => x.id === activeId);
+        if (c && subjectEl.textContent.startsWith('Historial · ')) {
+          subjectEl.textContent = c.subject;
+          subjectEl.style.color = '#6B6F93';
+          subjectEl.style.fontStyle = '';
+          subjectEl.title = 'Clic para editar';
+        }
+      }
+    }
+
+    // Sticky dividers: toggle is-stuck (background handled by fade overlay, not per-divider)
+    area.querySelectorAll('.past-date-divider').forEach(div => {
+      const r = div.getBoundingClientRect();
+      const stuck = r.top <= areaRect.top + 8;
+      div.classList.toggle('is-stuck', stuck);
+      div.style.background = 'transparent';
+    });
+
+    // Top fade overlay: gradient from area bg → transparent, covers the stuck chip zone
+    const fade    = document.getElementById('pastTopFade');
+    const fadeGrad = document.getElementById('pastTopFadeGrad');
+    const anyStuck = inPast && !!area.querySelector('.past-date-divider.is-stuck');
+    if (fade && fadeGrad) {
+      fade.style.display = anyStuck ? 'block' : 'none';
+      if (anyStuck) {
+        fadeGrad.style.background = `linear-gradient(to bottom, ${bg} 40%, transparent 100%)`;
+      }
+    }
+  });
+}
+
+// ── Patient tabs ───────────────────────────────────
+
+function switchPtab(i) {
+  ptabIndex = i;
+  const tabs = document.querySelectorAll('.ptab');
+  tabs.forEach((t, idx) => {
+    if (idx === i) {
+      t.style.color        = '#1A66FC';
+      t.style.borderBottom = '3px solid #1A66FC';
+    } else {
+      t.style.color        = '#6B6F93';
+      t.style.borderBottom = '2px solid #E0E1E9';
+    }
+  });
+  [0,1,2].forEach(idx => {
+    const el = document.getElementById(`ptab${idx}`);
+    el.style.display = idx === i ? 'flex' : 'none';
+  });
+}
+
+// ── Medications ────────────────────────────────────
+
+function renderMeds(meds) {
+  const section = document.getElementById('medSection');
+  const list    = document.getElementById('medList');
+
+  if (!meds || meds.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  list.innerHTML = meds.map(m => `
+    <div style="background:#FAFBFC;border:1px solid #ECEDF3;border-radius:8px;padding:12px 14px;">
+      <p class="font-inter" style="font-size:13px;font-weight:600;color:#2D3142;letter-spacing:-0.1px;margin-bottom:8px;">${esc(m.name)}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">
+        <div>
+          <p class="font-inter" style="font-size:10.5px;color:#9CA3AF;margin-bottom:1px;text-transform:uppercase;letter-spacing:0.3px;">Droga</p>
+          <p class="font-inter" style="font-size:12.5px;color:#40435B;">${esc(m.drug)}</p>
+        </div>
+        <div>
+          <p class="font-inter" style="font-size:10.5px;color:#9CA3AF;margin-bottom:1px;text-transform:uppercase;letter-spacing:0.3px;">Dosis</p>
+          <p class="font-inter" style="font-size:12.5px;color:#40435B;">${esc(m.dose)}</p>
+        </div>
+        <div style="grid-column:1/-1;">
+          <p class="font-inter" style="font-size:10.5px;color:#9CA3AF;margin-bottom:1px;text-transform:uppercase;letter-spacing:0.3px;">Presentación</p>
+          <p class="font-inter" style="font-size:12.5px;color:#40435B;">${esc(m.presentation)}</p>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+// ── Tablet panel toggle ────────────────────────────
+
+function togglePatientPanel() {
+  panelOpen = !panelOpen;
+  const panel = document.getElementById('patientPanel');
+  if (panelOpen) panel.classList.add('panel-open');
+  else           panel.classList.remove('panel-open');
+}
+
+// ── Modals ─────────────────────────────────────────
+
+const MODALS = {
+  turno: {
+    title: 'Nuevo turno',
+    body: () => `
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <label class="font-lato" style="font-size:14px;color:#6B6F93;display:block;margin-bottom:6px;">Especialidad</label>
+          <select class="font-lato" style="width:100%;border:1px solid #E0E1E9;border-radius:8px;padding:10px 12px;font-size:14px;color:#40435B;outline:none;">
+            <option>Clínica General</option><option>Cardiología</option><option>Dermatología</option><option>Neurología</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-lato" style="font-size:14px;color:#6B6F93;display:block;margin-bottom:6px;">Médico</label>
+          <select class="font-lato" style="width:100%;border:1px solid #E0E1E9;border-radius:8px;padding:10px 12px;font-size:14px;color:#40435B;outline:none;">
+            <option>Dra. Romero</option><option>Dr. Pérez</option><option>Dr. García</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-lato" style="font-size:14px;color:#6B6F93;display:block;margin-bottom:6px;">Fecha y hora</label>
+          <input type="datetime-local" class="font-lato" style="width:100%;border:1px solid #E0E1E9;border-radius:8px;padding:10px 12px;font-size:14px;color:#40435B;outline:none;">
+        </div>
+        <div>
+          <label class="font-lato" style="font-size:14px;color:#6B6F93;display:block;margin-bottom:6px;">Modalidad</label>
+          <div style="display:flex;gap:8px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="modalidad" value="virtual" checked> <span class="font-lato" style="font-size:14px;color:#40435B;">Virtual</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="modalidad" value="presencial"> <span class="font-lato" style="font-size:14px;color:#40435B;">Presencial</span>
+            </label>
+          </div>
+        </div>
+        <button onclick="closeModal();showToast('✓ Turno creado exitosamente')"
+          style="width:100%;background:#1A66FC;border:none;border-radius:8px;padding:12px;cursor:pointer;color:white;font-family:'Lato',sans-serif;font-weight:700;font-size:14px;transition:background 0.15s;"
+          onmouseenter="this.style.background='#0347CE'" onmouseleave="this.style.background='#1A66FC'">
+          Crear turno
+        </button>
+      </div>`
+  },
+  nota: {
+    title: 'Nueva nota',
+    body: () => `
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <label class="font-lato" style="font-size:14px;color:#6B6F93;display:block;margin-bottom:6px;">Tipo</label>
+          <select class="font-lato" style="width:100%;border:1px solid #E0E1E9;border-radius:8px;padding:10px 12px;font-size:14px;color:#40435B;outline:none;">
+            <option>Nota clínica</option><option>Nota administrativa</option><option>Alerta</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-lato" style="font-size:14px;color:#6B6F93;display:block;margin-bottom:6px;">Contenido</label>
+          <textarea rows="5" placeholder="Escribe la nota aquí..." class="font-lato"
+            style="width:100%;border:1px solid #E0E1E9;border-radius:8px;padding:10px 12px;font-size:14px;color:#40435B;outline:none;resize:none;"></textarea>
+        </div>
+        <button onclick="closeModal();showToast('✓ Nota guardada exitosamente')"
+          style="width:100%;background:#1A66FC;border:none;border-radius:8px;padding:12px;cursor:pointer;color:white;font-family:'Lato',sans-serif;font-weight:700;font-size:14px;"
+          onmouseenter="this.style.background='#0347CE'" onmouseleave="this.style.background='#1A66FC'">
+          Guardar nota
+        </button>
+      </div>`
+  },
+  solicitudes: {
+    title: 'Solicitudes del paciente',
+    body: () => `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${[
+          { label:'Receta IBU 400', sub:'Solicitada hace 2 días', badge:'Pendiente', bc:'#FFF3E0', tc:'#E65100' },
+          { label:'Análisis de sangre', sub:'Solicitada hace 5 días', badge:'Completada', bc:'#E8F5E9', tc:'#1B5E20' },
+          { label:'Turno Cardiología', sub:'Solicitada hace 1 semana', badge:'En proceso', bc:'#E8F0FF', tc:'#023BAC' },
+        ].map(r => `
+          <div style="display:flex;align-items:center;justify-content:space-between;border:1px solid #E0E1E9;border-radius:8px;padding:12px 16px;cursor:pointer;transition:background 0.12s;"
+               onmouseenter="this.style.background='#F8F9FB'" onmouseleave="this.style.background='white'">
+            <div>
+              <p class="font-lato" style="font-weight:700;font-size:14px;color:#40435B;">${r.label}</p>
+              <p class="font-lato" style="font-size:12px;color:#6B6F93;">${r.sub}</p>
+            </div>
+            <span class="font-lato" style="font-weight:500;font-size:12px;background:${r.bc};color:${r.tc};padding:3px 10px;border-radius:8px;">${r.badge}</span>
+          </div>`).join('')}
+      </div>`
+  },
+  acciones: {
+    title: 'Acciones rápidas',
+    body: () => `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${[
+          { icon:'fa-regular fa-calendar',    label:'Nuevo turno',   action:"closeModal();openModal('turno')" },
+          { icon:'fa-regular fa-file-lines',  label:'Nueva nota',    action:"closeModal();openModal('nota')" },
+          { icon:'fa-solid fa-prescription',  label:'Emitir receta', action:"closeModal();showToast('Abriendo módulo de recetas...')" },
+          { icon:'fa-solid fa-share-nodes',   label:'Derivar',       action:"closeModal();showToast('Iniciando derivación...')" },
+          { icon:'fa-solid fa-arrow-trend-up',label:'Escalar caso',  action:"closeModal();showToast('Escalando caso...')" },
+          { icon:'fa-solid fa-user-plus',     label:'Asignar agente',action:"closeModal();showToast('Asignando agente...')" },
+        ].map(a => `
+          <button onclick="${a.action}"
+            style="display:flex;flex-direction:column;align-items:center;gap:8px;border:1px solid #E0E1E9;border-radius:10px;padding:16px;cursor:pointer;background:white;transition:background 0.12s,border-color 0.12s;"
+            onmouseenter="this.style.background='#F8F9FB';this.style.borderColor='#1A66FC'"
+            onmouseleave="this.style.background='white';this.style.borderColor='#E0E1E9'">
+            <i class="${a.icon}" style="color:#1A66FC;font-size:22px;"></i>
+            <span class="font-lato" style="font-size:13px;color:#40435B;">${a.label}</span>
+          </button>`).join('')}
+      </div>`
+  },
+};
+
+function openModal(type) {
+  const m = MODALS[type];
+  if (!m) return;
+  document.getElementById('modalTitle').textContent = m.title;
+  document.getElementById('modalBody').innerHTML    = m.body();
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function closeModalOverlay(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+// Keyboard: Escape closes any open overlay
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal();
+    closePastSubjectModal();
+    closeComingSoon();
+    closeDemoInfo();
+  }
+});
+
+// ── Toast ──────────────────────────────────────────
+
+let _toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Helpers ────────────────────────────────────────
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Sin asignar ────────────────────────────────────
+
+function openSinAsignar() {
+  document.getElementById('sinAsignarOverlay').classList.add('open');
+}
+function closeSinAsignar() {
+  document.getElementById('sinAsignarOverlay').classList.remove('open');
+}
+function filterTickets(type, btn) {
+  document.querySelectorAll('.tkt-filter').forEach(b => {
+    b.style.borderColor = '#E0E1E9';
+    b.style.background = 'white';
+    b.style.color = '#6B6F93';
+  });
+  btn.style.borderColor = '#1A66FC';
+  btn.style.background = '#EEF4FF';
+  btn.style.color = '#1A66FC';
+}
+
+// ── Resueltos ──────────────────────────────────────
+
+function openResueltos() {
+  document.getElementById('resueltosOverlay').classList.add('open');
+}
+function closeResueltos(e) {
+  if (!e || e.target === document.getElementById('resueltosOverlay')) {
+    document.getElementById('resueltosOverlay').classList.remove('open');
+  }
+}
+function openResueltosList() {
+  const el = document.getElementById('resueltosListOverlay');
+  el.style.display = 'flex';
+}
+
+// ── Demo mode ──────────────────────────────────────
+
+let demoMode = 'mvp';
+let demoInfoOpen = false;
+
+// id → display value when visible
+const DEMO_V1_SHOW  = { btnSinAsignar:'flex', btnResueltos:'flex', viewModeToggle:'flex', qaActionsRow:'flex' };
+
+// Changelog content per mode
+const DEMO_INFO = {
+  mvp: {
+    sections: [
+      {
+        title: 'Adaptado del producto actual',
+        items: [
+          { icon:'≈', cls:'di-green', text:'Header "Conversaciones" + sidebar colapsado (como producto Osana)' },
+        ]
+      },
+      {
+        title: 'No incluido en MVP',
+        items: [
+          { icon:'−', cls:'di-red', text:'Botones "Sin asignar" y "Resueltos"' },
+          { icon:'−', cls:'di-red', text:'Selector Chat / Auditoría' },
+          { icon:'−', cls:'di-red', text:'Barra de acciones rápidas (Nuevo turno, etc.)' },
+          { icon:'−', cls:'di-red', text:'Filtros avanzados → chips rápidos de Prioridad y Estado' },
+          { icon:'−', cls:'di-red', text:'Re-inicio de chat con plantilla' },
+        ]
+      }
+    ]
+  },
+  v1: {
+    sections: [
+      {
+        title: 'Incorporado en V1',
+        items: [
+          { icon:'+', cls:'di-green', text:'Botones "Sin asignar" y "Resueltos"' },
+          { icon:'+', cls:'di-green', text:'Selector Chat / Auditoría' },
+          { icon:'+', cls:'di-green', text:'Barra de acciones rápidas (Nuevo turno, etc.)' },
+          { icon:'+', cls:'di-green', text:'Panel de filtros expandible completo' },
+          { icon:'+', cls:'di-green', text:'Re-inicio de chat con plantilla' },
+          { icon:'+', cls:'di-green', text:'Header rediseñado — nuevo concepto "Recepción de atención"' },
+          { icon:'+', cls:'di-green', text:'Sidebar lateral reemplazado por concepto de navegación nuevo' },
+        ]
+      },
+      {
+        title: 'En definición',
+        items: [
+          { icon:'~', cls:'di-red', text:'Experiencia de filtros sin terminar de definir' },
+        ]
+      }
+    ]
+  }
+};
+
+function renderDemoInfoPanel() {
+  const panel = document.getElementById('demoInfoPanel');
+  if (!panel) return;
+  const data = DEMO_INFO[demoMode];
+  panel.innerHTML = data.sections.map((sec, si) => `
+    ${si > 0 ? '<div class="demo-info-divider"></div>' : ''}
+    <div>
+      <div class="demo-info-section-title">${sec.title}</div>
+      ${sec.items.map(item => `
+        <div class="demo-info-item">
+          <div class="di-icon ${item.cls}">${item.icon}</div>
+          <span>${item.text}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function toggleDemoInfo() {
+  demoInfoOpen = !demoInfoOpen;
+  const panel = document.getElementById('demoInfoPanel');
+  const btn   = document.getElementById('demoInfoBtn');
+  if (demoInfoOpen) renderDemoInfoPanel();
+  panel.classList.toggle('open', demoInfoOpen);
+  btn.classList.toggle('active', demoInfoOpen);
+}
+
+function closeDemoInfo() {
+  demoInfoOpen = false;
+  const panel = document.getElementById('demoInfoPanel');
+  const btn   = document.getElementById('demoInfoBtn');
+  if (panel) { panel.classList.remove('open'); }
+  if (btn)   { btn.classList.remove('active'); }
+}
+
+function setDemoMode(mode) {
+  demoMode = mode;
+
+  // Update switcher buttons
+  document.querySelectorAll('.demo-switch-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  // Refresh info panel if open
+  if (demoInfoOpen) renderDemoInfoPanel();
+
+  // Header + sidebar toggle
+  const headerMVP = document.getElementById('appHeaderMVP');
+  const headerV1  = document.getElementById('appHeaderV1');
+  const sidebar   = document.getElementById('mvpSidebar');
+  if (headerMVP) headerMVP.style.display = mode === 'mvp' ? 'flex' : 'none';
+  if (headerV1)  headerV1.style.display  = mode === 'v1'  ? 'flex' : 'none';
+  if (sidebar)   sidebar.style.display   = mode === 'mvp' ? 'flex' : 'none';
+
+  // V1-only elements: show in V1, hide in MVP
+  Object.entries(DEMO_V1_SHOW).forEach(([id, showVal]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = mode === 'v1' ? showVal : 'none';
+  });
+
+  // Filter area: MVP = quick chips, V1 = full panel button
+  const filterBtn    = document.getElementById('filterBtn');
+  const mvpChips     = document.getElementById('mvpFilterChips');
+  const v1Note       = document.getElementById('v1FilterNote');
+  if (filterBtn) filterBtn.style.display = mode === 'v1' ? '' : 'none';
+  if (mvpChips)  mvpChips.style.display  = mode === 'mvp' ? 'flex' : 'none';
+  if (mode === 'mvp' && filterOpen) {
+    // Close expanded panel if switching to MVP
+    document.getElementById('filterPanel').style.display = 'none';
+    filterOpen = false;
+  }
+  if (v1Note) v1Note.style.display = mode === 'v1' ? 'block' : 'none';
+
+  // Template button: gray in MVP, normal in V1
+  const templateBtnEl = document.querySelector('#expiredInputBanner > button');
+  if (templateBtnEl && templateBtnEl.tagName === 'BUTTON') {
+    if (mode === 'mvp') {
+      templateBtnEl.style.opacity    = '0.38';
+      templateBtnEl.style.cursor     = 'not-allowed';
+      templateBtnEl.style.filter     = 'grayscale(0.4)';
+      templateBtnEl.style.boxShadow  = 'none';
+      templateBtnEl.setAttribute('data-orig-onclick', templateBtnEl.getAttribute('onclick') || '');
+      templateBtnEl.setAttribute('onclick', 'showComingSoon()');
+    } else {
+      templateBtnEl.style.opacity    = '1';
+      templateBtnEl.style.cursor     = 'pointer';
+      templateBtnEl.style.filter     = '';
+      templateBtnEl.style.boxShadow  = '0 2px 8px rgba(26,102,252,0.22)';
+      templateBtnEl.setAttribute('onclick', templateBtnEl.getAttribute('data-orig-onclick') || 'showTemplateModal()');
+    }
+  }
+
+  // If V1 mode and viewMode was forced to chat (MVP hides the toggle),
+  // keep whatever mode was active; no reset needed
+  if (mode === 'mvp' && viewMode === 'audit') {
+    setViewMode('chat');
+  }
+}
+
+function showComingSoon() {
+  document.getElementById('comingSoonOverlay').style.display = 'flex';
+}
+function closeComingSoon() {
+  document.getElementById('comingSoonOverlay').style.display = 'none';
+}
+
+// ── MVP quick-filter dropdowns ──────────────────────
+
+let mvpFilters = { priority: null, status: null };
+
+function toggleMvpDd(panelId) {
+  // Close all other mvp panels first
+  document.querySelectorAll('.mvp-dd-panel').forEach(p => {
+    if (p.id !== panelId) p.classList.remove('open');
+  });
+  document.getElementById(panelId).classList.toggle('open');
+}
+
+function setMvpFilter(type, value) {
+  // Toggle: click same value again to clear
+  if (mvpFilters[type] === value) {
+    mvpFilters[type] = null;
+  } else {
+    mvpFilters[type] = value;
+  }
+
+  // Update option highlight
+  const panelId = type === 'priority' ? 'mvpPriorityPanel' : 'mvpStatusPanel';
+  document.querySelectorAll(`#${panelId} .mvp-dd-opt`).forEach(opt => {
+    opt.classList.toggle('active', opt.textContent.trim() === value && mvpFilters[type] !== null);
+  });
+
+  // Update button label + style
+  const btnId    = type === 'priority' ? 'mvpPriorityBtn' : 'mvpStatusBtn';
+  const labelId  = type === 'priority' ? 'mvpPriorityLabel' : 'mvpStatusLabel';
+  const defaults = { priority: 'Prioridad', status: 'Estado' };
+  document.getElementById(labelId).textContent = mvpFilters[type] || defaults[type];
+  document.getElementById(btnId).classList.toggle('has-active', !!mvpFilters[type]);
+
+  // Close the dropdown
+  document.getElementById(panelId).classList.remove('open');
+
+  // Mirror into the main filter system and re-render
+  if (type === 'priority') {
+    // Priority isn't in the main filter system — just re-render with custom logic
+    renderList();
+  } else {
+    // Status filter: mirror to main activeFilters
+    activeFilters.status = mvpFilters.status ? [mvpFilters.status] : [];
+    renderList();
+  }
+}
+
+// Close MVP dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.mvp-filter-dd')) {
+    document.querySelectorAll('.mvp-dd-panel').forEach(p => p.classList.remove('open'));
+  }
+});
+
+// ── Start ──────────────────────────────────────────
+
+init();
+setDemoMode('mvp');
+
+</script>
+</body>
+</html>
